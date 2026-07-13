@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discounting Review Dashboard</title>
+<style>
+:root { color-scheme: light; }
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f0f4f8; color:#1e293b; font-size:14px; }
+
+.header{ background:linear-gradient(135deg,#1a2e4a 0%,#243b55 100%); color:#fff; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; }
+.header h1{ font-size:18px; font-weight:700; letter-spacing:-0.3px; }
+.header .sub{ font-size:12px; opacity:0.65; margin-top:3px; }
+.header-right{ text-align:right; font-size:11px; opacity:.7; line-height:1.8; }
+.countdown{ font-size:13px; font-weight:700; opacity:1 !important; color:#f97316; }
+
+.controls{ background:#fff; padding:12px 24px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ctrl-label{ font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+input[type=date]{ border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:13px; color:#1e293b; background:#f8fafc; }
+.btn{ padding:7px 18px; border:none; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
+.btn-primary{ background:#1a2e4a; color:#fff; }
+.btn-primary:hover{ background:#243b55; }
+.btn-primary:disabled{ opacity:.55; cursor:not-allowed; }
+.range-hint{ font-size:11px; color:#94a3b8; }
+.err-banner{ background:#fee2e2; border:1px solid #fca5a5; border-radius:6px; padding:8px 14px; color:#b91c1c; font-size:12px; display:none; }
+
+.ms-wrap{ position:relative; }
+.ms-btn{ display:flex; align-items:center; gap:7px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; padding:6px 12px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; white-space:nowrap; user-select:none; }
+.ms-btn:hover{ background:#f1f5f9; border-color:#94a3b8; }
+.ms-btn .ms-arrow{ font-size:10px; color:#94a3b8; transition:transform .15s; }
+.ms-btn.open .ms-arrow{ transform:rotate(180deg); }
+.ms-count{ background:#1a2e4a; color:#fff; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; }
+.ms-dropdown{ position:absolute; top:calc(100% + 6px); left:0; z-index:100; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:240px; max-height:380px; overflow-y:auto; display:none; }
+.ms-dropdown.open{ display:block; }
+.ms-top{ display:flex; gap:6px; padding:10px 12px; border-bottom:1px solid #f1f5f9; }
+.ms-top button{ font-size:11px; font-weight:700; border:none; background:none; color:#2563eb; cursor:pointer; padding:2px 6px; border-radius:4px; }
+.ms-top button:hover{ background:#eff6ff; }
+.ms-item{ display:flex; align-items:center; gap:9px; padding:8px 14px; cursor:pointer; transition:background .1s; }
+.ms-item:hover{ background:#f8fafc; }
+.ms-item label{ cursor:pointer; font-size:13px; flex:1; }
+.ms-item input[type=checkbox]{ width:14px; height:14px; accent-color:#1a2e4a; cursor:pointer; }
+.ms-cnt{ font-size:11px; color:#94a3b8; margin-left:auto; }
+
+.main{ padding:18px 24px; }
+
+.kpi-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:18px; }
+.kpi{ background:#fff; border-radius:10px; padding:16px 18px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+.kpi .lbl{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; margin-bottom:8px; }
+.kpi .val{ font-size:22px; font-weight:800; color:#1a2e4a; line-height:1.1; }
+.kpi .sub{ font-size:11px; color:#94a3b8; margin-top:5px; }
+.kpi.alert .val{ color:#dc2626; }
+
+.row2{ display:grid; grid-template-columns:1fr 320px; gap:14px; margin-bottom:16px; }
+
+.card{ background:#fff; border-radius:10px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,.04); overflow:hidden; margin-bottom:16px; }
+.card-hdr{ padding:13px 18px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; }
+.card-hdr h3{ font-size:14px; font-weight:700; }
+.badge{ background:#eff6ff; color:#2563eb; font-size:11px; font-weight:700; padding:3px 9px; border-radius:12px; }
+.card-body{ padding:16px 18px; }
+
+.chart-wrap{ height:230px; position:relative; }
+.donut-wrap{ height:230px; position:relative; }
+
+.tbl-wrap{ max-height:340px; overflow-y:auto; }
+.tbl-wrap::-webkit-scrollbar{ width:4px; }
+.tbl-wrap::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:2px; }
+table.dt{ width:100%; border-collapse:collapse; font-size:13px; }
+table.dt th{ background:#f8fafc; padding:9px 12px; text-align:left; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:1; white-space:nowrap; }
+table.dt td{ padding:9px 12px; border-bottom:1px solid #f8fafc; }
+table.dt tr:last-child td{ border-bottom:none; }
+table.dt tr:hover td{ background:#f8fafc; }
+.num{ text-align:right; font-variant-numeric:tabular-nums; }
+
+.bar-wrap{ display:flex; align-items:center; gap:6px; min-width:90px; }
+.bar-bg{ flex:1; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden; }
+.bar-fill{ height:100%; border-radius:3px; }
+.bar-high{ background:#ef4444; }
+.bar-med{ background:#f97316; }
+.bar-low{ background:#10b981; }
+.pct-txt{ font-size:12px; font-weight:700; min-width:38px; text-align:right; }
+.pct-high{ color:#dc2626; }
+.pct-med{ color:#d97706; }
+.pct-low{ color:#16a34a; }
+
+.tab-bar{ display:flex; border-bottom:2px solid #e2e8f0; padding:0 18px; gap:2px; }
+.tab{ padding:9px 14px; font-size:12px; font-weight:600; color:#64748b; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; white-space:nowrap; }
+.tab.on{ color:#1a2e4a; border-bottom-color:#1a2e4a; background:#f8fafc; }
+.tab:hover:not(.on){ color:#334155; }
+
+.s-disc{ background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+.s-none{ background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+.s-exp{ background:#1e293b; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+.exp-crit{ color:#dc2626; font-weight:700; }
+.exp-warn{ color:#d97706; font-weight:600; }
+.exp-ok{ color:#16a34a; }
+
+.st-pill{ background:#eff6ff; color:#2563eb; padding:2px 7px; border-radius:10px; font-size:11px; font-weight:600; }
+
+.sk{ background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%); background-size:200% 100%; animation:sh 1.4s infinite; border-radius:4px; }
+@keyframes sh{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.spin-wrap{ text-align:center; padding:28px; color:#94a3b8; font-size:13px; }
+.spin{ display:inline-block; width:18px; height:18px; border:2px solid #e2e8f0; border-top-color:#1a2e4a; border-radius:50%; animation:rot .8s linear infinite; vertical-align:middle; margin-right:7px; }
+@keyframes rot{ to{ transform:rotate(360deg) } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Bazaar Operations</div>
+    <h1>Discounting Review Dashboard</h1>
+    <div class="sub">Basket &amp; item discounts · Expiry linkage · Live from Trino</div>
+  </div>
+  <div class="header-right">
+    <div id="lastUp">—</div>
+    <div>Auto-refresh in <span class="countdown" id="countdown">30:00</span></div>
+  </div>
+</div>
+
+<div class="controls">
+  <span class="ctrl-label">Date Range</span>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <input type="date" id="sd">
+    <span style="color:#94a3b8;font-size:13px;">→</span>
+    <input type="date" id="ed">
+  </div>
+  <span class="range-hint">Max 90 days</span>
+  <div style="width:1px;height:22px;background:#e2e8f0;"></div>
+  <span class="ctrl-label">Store Type</span>
+  <div class="ms-wrap" id="msWrap">
+    <div class="ms-btn" id="msBtn" onclick="toggleMsDropdown()">
+      <span id="msBtnLabel">All Store Types</span>
+      <span class="ms-arrow">▼</span>
+    </div>
+    <div class="ms-dropdown" id="msDropdown">
+      <div class="ms-top">
+        <button onclick="msSelectAll()">Select All</button>
+        <button onclick="msClearAll()">Clear All</button>
+      </div>
+      <div id="msItems"></div>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="refBtn" onclick="loadAll()">↻ Refresh</button>
+  <div class="err-banner" id="errBanner"></div>
+  <div id="statusMsg" style="font-size:12px;color:#64748b;"></div>
+</div>
+
+<div class="main">
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi"><div class="lbl">Total Discount</div><div class="val sk" style="height:28px;width:110px;margin-bottom:6px;"></div></div>
+    <div class="kpi"><div class="lbl">Basket Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
+    <div class="kpi"><div class="lbl">Item Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
+    <div class="kpi"><div class="lbl">Discount % of GMV</div><div class="val sk" style="height:28px;width:70px;margin-bottom:6px;"></div></div>
+    <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val sk" style="height:28px;width:80px;margin-bottom:6px;"></div></div>
+  </div>
+  <div class="row2">
+    <div class="card"><div class="card-hdr"><h3>📈 Daily Discount Trend</h3><span class="badge" id="trendBadge">—</span></div><div class="card-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div></div>
+    <div class="card"><div class="card-hdr"><h3>🏪 By Store Type</h3></div><div class="card-body"><div class="donut-wrap"><canvas id="storeChart"></canvas></div></div></div>
+  </div>
+  <div class="card"><div class="card-hdr"><h3>🏭 Warehouse Breakdown</h3><span class="badge" id="whBadge">—</span></div><div class="tbl-wrap"><table class="dt"><thead><tr><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Basket Disc</th><th class="num">Item Disc</th><th class="num">Total Disc</th><th>Disc % GMV</th></tr></thead><tbody id="whBody"><tr><td colspan="7"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody></table></div></div>
+  <div class="card"><div class="card-hdr"><h3>🏷️ Top Discounted SKUs</h3><span class="badge" id="skuBadge">—</span></div><div class="tbl-wrap"><table class="dt"><thead><tr><th>#</th><th>Item</th><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Qty</th><th class="num">Discount</th><th>Disc %</th></tr></thead><tbody id="skuBody"><tr><td colspan="8"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody></table></div></div>
+  <div class="card">
+    <div class="card-hdr"><h3>⚠️ Near-Expiry Inventory (live snapshot)</h3><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:#94a3b8;" id="expSnapshotDate"></span><span class="badge" id="expBadge">—</span></div></div>
+    <div class="tab-bar" id="tabBar">
+      <button class="tab on" data-b="ALL" onclick="switchTab(this)">All</button>
+      <button class="tab" data-b="EXPIRED" onclick="switchTab(this)">🔴 Expired</button>
+      <button class="tab" data-b="0-30 days" onclick="switchTab(this)">🟠 0–30 Days</button>
+      <button class="tab" data-b="31-60 days" onclick="switchTab(this)">🟡 31–60 Days</button>
+      <button class="tab" data-b="61-90 days" onclick="switchTab(this)">🟢 61–90 Days</button>
+    </div>
+    <div class="tbl-wrap"><table class="dt"><thead><tr><th>Item</th><th>Warehouse</th><th class="num">Days Left</th><th>Expiry Date</th><th class="num">Stock on Hand</th><th class="num">Inventory Value</th><th class="num">Sold (Period)</th><th class="num">Discount Given</th><th>Status</th></tr></thead><tbody id="expBody"><tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody></table></div>
+  </div>
+</div>
+
+<script>
+const STORE_TYPES=[{v:'BUYER',label:'Buyer',cnt:19726},{v:'SELF_SERVICE_STORE_PRIME',label:'Self-Service Prime',cnt:16031},{v:'HOUSEHOLD',label:'Household',cnt:3039},{v:'DIGITAL_BUYER',label:'Digital Buyer',cnt:1089},{v:'OFFICES_INSTITUTIONS',label:'Offices & Institutions',cnt:339},{v:'GENERAL_STORE',label:'General Store',cnt:293},{v:'CORPORATE',label:'Corporate',cnt:183},{v:'WHOLE_SELLER_PRIME',label:'Wholesaler Prime',cnt:151},{v:'TEXTILE',label:'Textile',cnt:128},{v:'CORPORATE_BUYER',label:'Corporate Buyer',cnt:109},{v:'TRADER',label:'Trader',cnt:96},{v:'PAINT_MANUFACTURERS',label:'Paint Manufacturers',cnt:52},{v:'PAPER_N_PACKAGING',label:'Paper & Packaging',cnt:32},{v:'WHOLE_SELLER',label:'Wholesaler',cnt:27},{v:'HORECA',label:'HoReCa',cnt:17},{v:'CHEMICAL_MANUFACTURER',label:'Chemical Manufacturer',cnt:12},{v:'CONFECTIONARY',label:'Confectionary',cnt:10},{v:'INDUSTRIAL',label:'Industrial',cnt:8}];
+(function(){document.getElementById('msItems').innerHTML=STORE_TYPES.map(st=>`<div class="ms-item"><input type="checkbox" class="st-cb" id="cb_${st.v}" value="${st.v}" onchange="updateMsLabel()"><label for="cb_${st.v}">${st.label}</label><span class="ms-cnt">${st.cnt.toLocaleString()}</span></div>`).join('');})();
+function toggleMsDropdown(){document.getElementById('msBtn').classList.toggle('open');document.getElementById('msDropdown').classList.toggle('open');}
+document.addEventListener('click',e=>{if(!document.getElementById('msWrap').contains(e.target)){document.getElementById('msBtn').classList.remove('open');document.getElementById('msDropdown').classList.remove('open');}});
+function msSelectAll(){document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=true);updateMsLabel();}
+function msClearAll(){document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=false);updateMsLabel();}
+function updateMsLabel(){const checked=[...document.querySelectorAll('.st-cb:checked')];const lbl=document.getElementById('msBtnLabel');const btn=document.getElementById('msBtn');const ex=btn.querySelector('.ms-count');if(ex)ex.remove();if(checked.length===0){lbl.textContent='All Store Types';}else{lbl.textContent='Store Types';const b=document.createElement('span');b.className='ms-count';b.textContent=checked.length;btn.insertBefore(b,btn.querySelector('.ms-arrow'));}}
+function stWhere(col){col=col||'store_type_order';const checked=[...document.querySelectorAll('.st-cb:checked')].map(cb=>`'${cb.value}'`);return checked.length>0?`AND ${col} IN (${checked.join(',')})`:'';}
+let tCI=null,sCI=null,allExp=[],curBucket='ALL';
+const N=n=>n==null?'—':Math.abs(n)>=1e6?(n/1e6).toFixed(1)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':Math.round(n).toLocaleString();
+const P=n=>n==null?'—':n.toFixed(1)+'%';
+const sd=()=>document.getElementById('sd').value;
+const ed=()=>document.getElementById('ed').value;
+function validateRange(){const s=new Date(sd()),e=new Date(ed()),days=(e-s)/(864e5);if(days>90){showErr('Date range cannot exceed 90 days.');return false;}if(days<0){showErr('Start date must be before end date.');return false;}hideErr();return true;}
+function showErr(m){const b=document.getElementById('errBanner');b.textContent=m;b.style.display='block';}
+function hideErr(){document.getElementById('errBanner').style.display='none';}
+function setStatus(m){document.getElementById('statusMsg').textContent=m;}
+async function q(sql){const res=await fetch('/api/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:sql})});if(!res.ok){const txt=await res.text();throw new Error(txt||`HTTP ${res.status}`);}return await res.json();}
+const REFRESH_SECS=30*60;let secsLeft=REFRESH_SECS,autoTimer=null;
+function startCountdown(){clearInterval(autoTimer);secsLeft=REFRESH_SECS;autoTimer=setInterval(()=>{secsLeft--;const m=String(Math.floor(secsLeft/60)).padStart(2,'0');const s=String(secsLeft%60).padStart(2,'0');document.getElementById('countdown').textContent=`${m}:${s}`;if(secsLeft<=0){loadAll();}},1000);}
+async function loadTrend(){const rows=await q(`SELECT CAST(order_date AS VARCHAR) AS d,COUNT(DISTINCT order_number) AS orders,COUNT(DISTINCT CASE WHEN (COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 THEN order_number END) AS disc_orders,SUM(COALESCE(basket_discount,0)) AS bd,SUM(COALESCE(item_discount,0)) AS id,SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td,SUM(gross_gmv) AS gmv FROM hive.bazaar_biz_silver.order_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY 1 ORDER BY 1`);const tBd=rows.reduce((s,r)=>s+(r.bd||0),0);const tId=rows.reduce((s,r)=>s+(r.id||0),0);const tTd=rows.reduce((s,r)=>s+(r.td||0),0);const tGmv=rows.reduce((s,r)=>s+(r.gmv||0),0);const tOrd=rows.reduce((s,r)=>s+(r.orders||0),0);const tDO=rows.reduce((s,r)=>s+(r.disc_orders||0),0);const dPct=tGmv>0?tTd/tGmv*100:0;document.getElementById('kpiRow').innerHTML=`<div class="kpi"><div class="lbl">Total Discount</div><div class="val">PKR ${N(tTd)}</div><div class="sub">PKR ${Math.round(tTd).toLocaleString()}</div></div><div class="kpi"><div class="lbl">Basket Discount</div><div class="val">PKR ${N(tBd)}</div><div class="sub">${P(tGmv>0?tBd/tGmv*100:0)} of GMV</div></div><div class="kpi"><div class="lbl">Item Discount</div><div class="val">PKR ${N(tId)}</div><div class="sub">${P(tGmv>0?tId/tGmv*100:0)} of GMV</div></div><div class="kpi ${dPct>=5?'alert':''}"><div class="lbl">Discount % of GMV</div><div class="val">${P(dPct)}</div><div class="sub">GMV: PKR ${N(tGmv)}</div></div><div class="kpi"><div class="lbl">Discounted Orders</div><div class="val">${tDO.toLocaleString()}</div><div class="sub">of ${tOrd.toLocaleString()} · ${P(tOrd>0?tDO/tOrd*100:0)}</div></div>`;document.getElementById('trendBadge').textContent=rows.length+' days';const ctx=document.getElementById('trendChart').getContext('2d');if(tCI)tCI.destroy();tCI=new Chart(ctx,{type:'line',data:{labels:rows.map(r=>r.d?r.d.substring(5,10):''),datasets:[{label:'Total Discount',data:rows.map(r=>Math.round(r.td||0)),borderColor:'#1a2e4a',backgroundColor:'rgba(26,46,74,.08)',fill:true,tension:.35,pointRadius:3,borderWidth:2.5},{label:'Item Discount',data:rows.map(r=>Math.round(r.id||0)),borderColor:'#f97316',fill:false,tension:.35,pointRadius:3,borderWidth:2},{label:'Basket Discount',data:rows.map(r=>Math.round(r.bd||0)),borderColor:'#10b981',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[5,3]}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: PKR ${c.raw.toLocaleString()}`}}},scales:{y:{ticks:{callback:v=>'PKR '+(v>=1e6?(v/1e6).toFixed(1)+'M':(v>=1e3?(v/1e3).toFixed(0)+'K':v)),font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});}
+async function loadStore(){const rows=await q(`SELECT store_type_order AS st,SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td FROM hive.bazaar_biz_silver.order_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY 1 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 10`);const pal=['#1a2e4a','#f97316','#10b981','#3b82f6','#a855f7','#ef4444','#f59e0b','#06b6d4','#64748b','#84cc16'];const ctx=document.getElementById('storeChart').getContext('2d');if(sCI)sCI.destroy();sCI=new Chart(ctx,{type:'doughnut',data:{labels:rows.map(r=>r.st||'Unknown'),datasets:[{data:rows.map(r=>Math.round(r.td||0)),backgroundColor:pal,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}},tod:{callbacks:{label:c=>` ${c.label}: PKR ${c.raw.toLocaleString()}`}}}}});}
+async function loadWH(){const rows=await q(`SELECT order_warehouse AS wh,store_type_order AS st,COUNT(DISTINCT order_number) AS ord,SUM(COALESCE(basket_discount,0)) AS bd,SUM(COALESCE(item_discount,0)) AS id,SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td,SUM(gross_gmv) AS gmv,ROUND((SUM(COALESCE(basket_discount,0))+SUM(COALESCE(item_discount,0)))/NULLIF(SUM(gross_gmv),0)*100,2) AS dp FROM hive.bazaar_biz_silver.order_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY 1,2 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 60`);document.getElementById('whBadge').textContent=rows.length+' rows';const mx=Math.max(...rows.map(r=>r.td||0));document.getElementById('whBody').innerHTML=rows.length?rows.map(r=>{const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low',bw=mx>0?Math.round((r.td||0)/mx*100):0;return `<tr><td><strong>${r.wh||'—'}</strong></td><td><span class="st-pill">${r.st||'—'}</span></td><td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">PKR ${N(r.bd)}</td><td class="num">PKR ${N(r.id)}</td><td class="num" style="font-weight:700;">PKR ${N(r.td)}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${bw}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">No data</td></tr>';}
+async function loadSKUs(){const rows=await q(`SELECT item_name,order_warehouse AS wh,store_type_order AS st,COUNT(DISTINCT order_number) AS ord,SUM(ordered_quantity) AS qty,SUM(item_discount) AS id,SUM(gross_gmv) AS gmv,ROUND(SUM(item_discount)/NULLIF(SUM(gross_gmv),0)*100,2) AS dp FROM hive.bazaar_biz_silver.order_item_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') AND item_discount>0 ${stWhere('store_type_order')} GROUP BY 1,2,3 ORDER BY id DESC LIMIT 30`);document.getElementById('skuBadge').textContent='Top '+rows.length;document.getElementById('skuBody').innerHTML=rows.length?rows.map((r,i)=>{const p=r.dp||0,cls=p>=20?'high':p>=10?'med':'low';return `<tr><td style="color:#94a3b8;font-size:11px;font-weight:700;">${i+1}</td><td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td><td><span class="st-pill">${r.st||'—'}</span></td><td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">${(r.qty||0).toLocaleString()}</td><td class="num" style="font-weight:700;color:#1a2e4a;">PKR ${N(r.id)}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*3,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No data</td></tr>';}
+async function loadExpiry(){const rows=await q(`SELECT inv.item_name,inv.warehouse AS wh,inv.expiry_date AS exp,DATE_DIFF('day',CURRENT_DATE,inv.expiry_date) AS dte,SUM(inv.balance_sale) AS bal_sale,MAX(inv.uom_sale_name) AS uom,ROUND(SUM(inv.balance_sale*COALESCE(CAST(inv.mrp AS DOUBLE),0)),0) AS inv_value,COALESCE(SUM(oib.item_discount),0) AS dg,COALESCE(SUM(oib.ordered_quantity),0) AS qs,MAX(CAST(inv.snapshot_date AS VARCHAR)) AS snap_dt,CASE WHEN DATE_DIFF('day',CURRENT_DATE,inv.expiry_date)<0 THEN 'EXPIRED' WHEN DATE_DIFF('day',CURRENT_DATE,inv.expiry_date)<=30 THEN '0-30 days' WHEN DATE_DIFF('day',CURRENT_DATE,inv.expiry_date)<=60 THEN '31-60 days' ELSE '61-90 days' END AS bucket FROM hive.bazaar_ops_silver.warehouse_inventory_batch_snapshot inv LEFT JOIN hive.bazaar_biz_silver.order_item_booked oib ON inv.item_id=oib.item_id AND oib.partition_key>=DATE '2026-06-01' AND oib.order_date>=DATE '${sd()}' AND oib.order_date<=DATE '${ed()}' AND oib.order_status NOT IN ('CANCELLED') WHERE inv.partition_key>=DATE '2026-06-01' AND inv.snapshot_date=(SELECT MAX(snapshot_date) FROM hive.bazaar_ops_silver.warehouse_inventory_batch_snapshot WHERE partition_key>=DATE '2026-06-01') AND inv.expiry_date>DATE '2020-01-01' AND inv.expiry_date<=CURRENT_DATE+INTERVAL '90' DAY AND inv.balance_stock>0 GROUP BY inv.item_name,inv.warehouse,inv.expiry_date ORDER BY dte ASC LIMIT 500`);allExp=rows;const snapDt=rows.length&&rows[0].snap_dt?rows[0].snap_dt.substring(0,10):'';if(snapDt)document.getElementById('expSnapshotDate').textContent='Snapshot: '+snapDt;const cnts={ALL:rows.length,EXPIRED:0,'0-30 days':0,'31-60 days':0,'61-90 days':0};rows.forEach(r=>{if(cnts[r.bucket]!==undefined)cnts[r.bucket]++;});document.getElementById('expBadge').textContent=rows.length+' items';document.querySelectorAll('.tab').forEach(t=>{const b=t.dataset.b;t.textContent=t.textContent.replace(/\s*\(\d+\)$/,'')+` (${cnts[b]||0})`;});renderExp(curBucket);}
+function renderExp(bucket){curBucket=bucket;const data=bucket==='ALL'?allExp:allExp.filter(r=>r.bucket===bucket);const tbody=document.getElementById('expBody');if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No items</td></tr>';return;}tbody.innerHTML=data.map(r=>{const d=r.dte,ec=d<0?'exp-crit':d<=7?'exp-crit':d<=30?'exp-warn':'exp-ok';const dl=d<0?`${Math.abs(d)}d ago`:`${d}d`;const disc=(r.dg||0)>0;const badge=r.bucket==='EXPIRED'?'<span class="s-exp">EXPIRED</span>':disc?'<span class="s-disc">✓ Discounted</span>':'<span class="s-none">⚠ No Discount</span>';const stockLabel=(r.bal_sale!=null&&r.uom)?`${Math.round(r.bal_sale).toLocaleString()} <span style="font-size:10px;color:#94a3b8;">${r.uom}</span>`:(r.bal_sale!=null?Math.round(r.bal_sale).toLocaleString():'—');const invVal=(r.inv_value&&r.inv_value>0)?'PKR '+N(r.inv_value):'—';return `<tr><td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td><td class="num"><span class="${ec}">${dl}</span></td><td>${r.exp?r.exp.substring(0,10):'—'}</td><td class="num">${stockLabel}</td><td class="num" style="font-weight:600;">${invVal}</td><td class="num">${(r.qs||0).toLocaleString()}</td><td class="num" style="font-weight:600;">${disc?'PKR '+N(r.dg):'—'}</td><td>${badge}</td></tr>`;}).join('');}
+function switchTab(btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');renderExp(btn.dataset.b);}
+async function loadAll(){if(!validateRange())return;const btn=document.getElementById('refBtn');btn.disabled=true;setStatus('Loading data…');document.getElementById('kpiRow').innerHTML=['Total Discount','Basket Discount','Item Discount','Discount % of GMV','Discounted Orders'].map(l=>`<div class="kpi"><div class="lbl">${l}</div><div class="val sk" style="height:28px;width:100px;margin-bottom:6px;"></div></div>`).join('');['whBody','skuBody','expBody'].forEach(id=>{document.getElementById(id).innerHTML='<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';});try{await Promise.all([loadTrend(),loadStore(),loadWH(),loadSKUs(),loadExpiry()]);document.getElementById('lastUp').textContent='Updated '+new Date().toLocaleTimeString();setStatus('');startCountdown();}catch(e){showErr('Error loading data: '+e.message);setStatus('');}finally{btn.disabled=false;}}
+window.addEventListener('load',()=>{const today=new Date();const fmt=d=>d.toISOString().split('T')[0];const start=new Date(today);start.setDate(today.getDate()-29);document.getElementById('ed').value=fmt(today);document.getElementById('sd').value=fmt(start);loadAll();});
+</script>
+</body>
+</html>
