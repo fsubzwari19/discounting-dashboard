@@ -25,6 +25,7 @@ input[type=date]{ border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px;
 .range-hint{ font-size:11px; color:#94a3b8; }
 .err-banner{ background:#fee2e2; border:1px solid #fca5a5; border-radius:6px; padding:8px 14px; color:#b91c1c; font-size:12px; display:none; }
 
+/* Multi-select store type */
 .ms-wrap{ position:relative; }
 .ms-btn{ display:flex; align-items:center; gap:7px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; padding:6px 12px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; white-space:nowrap; user-select:none; }
 .ms-btn:hover{ background:#f1f5f9; border-color:#94a3b8; }
@@ -128,7 +129,9 @@ table.dt tr:hover td{ background:#f8fafc; }
     <input type="date" id="ed">
   </div>
   <span class="range-hint">Max 90 days</span>
+
   <div style="width:1px;height:22px;background:#e2e8f0;"></div>
+
   <span class="ctrl-label">Store Type</span>
   <div class="ms-wrap" id="msWrap">
     <div class="ms-btn" id="msBtn" onclick="toggleMsDropdown()">
@@ -143,12 +146,14 @@ table.dt tr:hover td{ background:#f8fafc; }
       <div id="msItems"></div>
     </div>
   </div>
+
   <button class="btn btn-primary" id="refBtn" onclick="loadAll()">↻ Refresh</button>
   <div class="err-banner" id="errBanner"></div>
   <div id="statusMsg" style="font-size:12px;color:#64748b;"></div>
 </div>
 
 <div class="main">
+
   <div class="kpi-row" id="kpiRow">
     <div class="kpi"><div class="lbl">Total Discount</div><div class="val sk" style="height:28px;width:110px;margin-bottom:6px;"></div></div>
     <div class="kpi"><div class="lbl">Basket Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
@@ -156,14 +161,39 @@ table.dt tr:hover td{ background:#f8fafc; }
     <div class="kpi"><div class="lbl">Discount % of GMV</div><div class="val sk" style="height:28px;width:70px;margin-bottom:6px;"></div></div>
     <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val sk" style="height:28px;width:80px;margin-bottom:6px;"></div></div>
   </div>
-  <div class="row2">
-    <div class="card"><div class="card-hdr"><h3>📈 Daily Discount Trend</h3><span class="badge" id="trendBadge">—</span></div><div class="card-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div></div>
-    <div class="card"><div class="card-hdr"><h3>🏪 By Store Type</h3></div><div class="card-body"><div class="donut-wrap"><canvas id="storeChart"></canvas></div></div></div>
-  </div>
-  <div class="card"><div class="card-hdr"><h3>🏭 Warehouse Breakdown</h3><span class="badge" id="whBadge">—</span></div><div class="tbl-wrap"><table class="dt"><thead><tr><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Basket Disc</th><th class="num">Item Disc</th><th class="num">Total Disc</th><th>Disc % GMV</th></tr></thead><tbody id="whBody"><tr><td colspan="7"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody></table></div></div>
-  <div class="card"><div class="card-hdr"><h3>🏷️ Top Discounted SKUs</h3><span class="badge" id="skuBadge">—</span></div><div class="tbl-wrap"><table class="dt"><thead><tr><th>#</th><th>Item</th><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Qty</th><th class="num">Discount</th><th>Disc %</th></tr></thead><tbody id="skuBody"><tr><td colspan="8"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody></table></div></div>
 
-  <!-- Order Level View -->
+  <div class="row2">
+    <div class="card">
+      <div class="card-hdr"><h3>📈 Daily Discount Trend</h3><span class="badge" id="trendBadge">—</span></div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h3>🏪 By Store Type</h3></div>
+      <div class="card-body"><div class="donut-wrap"><canvas id="storeChart"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><h3>🏭 Warehouse Breakdown</h3><span class="badge" id="whBadge">—</span></div>
+    <div class="tbl-wrap">
+      <table class="dt">
+        <thead><tr><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Basket Disc</th><th class="num">Item Disc</th><th class="num">Total Disc</th><th>Disc % GMV</th></tr></thead>
+        <tbody id="whBody"><tr><td colspan="7"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><h3>🏷️ Top Discounted SKUs</h3><span class="badge" id="skuBadge">—</span></div>
+    <div class="tbl-wrap">
+      <table class="dt">
+        <thead><tr><th>#</th><th>Item</th><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Qty</th><th class="num">Discount</th><th>Disc %</th></tr></thead>
+        <tbody id="skuBody"><tr><td colspan="8"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Order Level View ─────────────────────────────────────────────── -->
   <div class="card">
     <div class="card-hdr" style="flex-wrap:wrap;gap:10px;">
       <h3>📋 Order Level View</h3>
@@ -177,13 +207,17 @@ table.dt tr:hover td{ background:#f8fafc; }
         <button class="btn btn-primary" style="padding:5px 14px;font-size:12px;" onclick="loadOrders(true)">↻ Load</button>
         <button class="btn" style="padding:5px 14px;font-size:12px;background:#f1f5f9;color:#1e293b;border:1px solid #e2e8f0;" onclick="exportOrderCSV()">⬇ CSV</button>
         <span class="badge" id="orderBadge">—</span>
-        <span style="font-size:11px;color:#dc2626;" id="ordErrMsg"></span>
+        <span style="font-size:11px;color:#94a3b8;" id="ordErrMsg"></span>
       </div>
     </div>
     <div class="tbl-wrap" style="max-height:420px;">
       <table class="dt">
         <thead>
-          <tr><th>Order #</th><th>Date</th><th>Warehouse</th><th>Store Type</th><th class="num">Basket Disc</th><th class="num">Item Disc</th><th class="num">Total Disc</th><th class="num">GMV</th><th>Disc %</th></tr>
+          <tr>
+            <th>Order #</th><th>Date</th><th>Warehouse</th><th>Store Type</th>
+            <th class="num">Basket Disc</th><th class="num">Item Disc</th>
+            <th class="num">Total Disc</th><th class="num">GMV</th><th>Disc %</th>
+          </tr>
         </thead>
         <tbody id="orderBody">
           <tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;font-size:13px;">Set a date range and click Load ↻</td></tr>
@@ -197,110 +231,487 @@ table.dt tr:hover td{ background:#f8fafc; }
   </div>
 
   <div class="card">
-    <div class="card-hdr"><h3>⚠️ Near-Expiry Inventory (live snapshot)</h3><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:#94a3b8;" id="expSnapshotDate"></span><span class="badge" id="expBadge">—</span></div></div>
-    <div class="tab-bar">
+    <div class="card-hdr">
+      <h3>⚠️ Near-Expiry Inventory (live snapshot)</h3>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:#94a3b8;" id="expSnapshotDate"></span>
+        <span class="badge" id="expBadge">—</span>
+      </div>
+    </div>
+    <div class="tab-bar" id="tabBar">
       <button class="tab on" data-b="ALL" onclick="switchTab(this)">All</button>
       <button class="tab" data-b="EXPIRED" onclick="switchTab(this)">🔴 Expired</button>
       <button class="tab" data-b="0-30 days" onclick="switchTab(this)">🟠 0–30 Days</button>
       <button class="tab" data-b="31-60 days" onclick="switchTab(this)">🟡 31–60 Days</button>
       <button class="tab" data-b="61-90 days" onclick="switchTab(this)">🟢 61–90 Days</button>
     </div>
-    <div class="tbl-wrap"><table class="dt"><thead><tr><th>Item</th><th>Warehouse</th><th class="num">Days Left</th><th>Expiry Date</th><th class="num">Stock on Hand</th><th class="num">Inventory Value</th><th class="num">Sold (Period)</th><th class="num">Discount Given</th><th>Status</th></tr></thead><tbody id="expBody"><tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody></table></div>
+    <div class="tbl-wrap">
+      <table class="dt">
+        <thead>
+          <tr>
+            <th>Item</th><th>Warehouse</th><th class="num">Days Left</th><th>Expiry Date</th>
+            <th class="num">Stock on Hand</th><th class="num">Inventory Value</th>
+            <th class="num">Sold (Period)</th><th class="num">Discount Given</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="expBody"><tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
+      </table>
+    </div>
   </div>
+
 </div>
 
 <script>
-const STORE_TYPES=[{v:'BUYER',label:'Buyer',cnt:19726},{v:'SELF_SERVICE_STORE_PRIME',label:'Self-Service Prime',cnt:16031},{v:'HOUSEHOLD',label:'Household',cnt:3039},{v:'DIGITAL_BUYER',label:'Digital Buyer',cnt:1089},{v:'OFFICES_INSTITUTIONS',label:'Offices & Institutions',cnt:339},{v:'GENERAL_STORE',label:'General Store',cnt:293},{v:'CORPORATE',label:'Corporate',cnt:183},{v:'WHOLE_SELLER_PRIME',label:'Wholesaler Prime',cnt:151},{v:'TEXTILE',label:'Textile',cnt:128},{v:'CORPORATE_BUYER',label:'Corporate Buyer',cnt:109},{v:'TRADER',label:'Trader',cnt:96},{v:'PAINT_MANUFACTURERS',label:'Paint Manufacturers',cnt:52},{v:'PAPER_N_PACKAGING',label:'Paper & Packaging',cnt:32},{v:'WHOLE_SELLER',label:'Wholesaler',cnt:27},{v:'HORECA',label:'HoReCa',cnt:17},{v:'CHEMICAL_MANUFACTURER',label:'Chemical Manufacturer',cnt:12},{v:'CONFECTIONARY',label:'Confectionary',cnt:10},{v:'INDUSTRIAL',label:'Industrial',cnt:8}];
-(function(){document.getElementById('msItems').innerHTML=STORE_TYPES.map(st=>`<div class="ms-item"><input type="checkbox" class="st-cb" id="cb_${st.v}" value="${st.v}" onchange="updateMsLabel()"><label for="cb_${st.v}">${st.label}</label><span class="ms-cnt">${st.cnt.toLocaleString()}</span></div>`).join('');})();
-function toggleMsDropdown(){document.getElementById('msBtn').classList.toggle('open');document.getElementById('msDropdown').classList.toggle('open');}
-document.addEventListener('click',e=>{if(!document.getElementById('msWrap').contains(e.target)){document.getElementById('msBtn').classList.remove('open');document.getElementById('msDropdown').classList.remove('open');}});
-function msSelectAll(){document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=true);updateMsLabel();}
-function msClearAll(){document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=false);updateMsLabel();}
-function updateMsLabel(){const checked=[...document.querySelectorAll('.st-cb:checked')];const lbl=document.getElementById('msBtnLabel');const btn=document.getElementById('msBtn');const ex=btn.querySelector('.ms-count');if(ex)ex.remove();if(checked.length===0){lbl.textContent='All Store Types';}else{lbl.textContent='Store Types';const b=document.createElement('span');b.className='ms-count';b.textContent=checked.length;btn.insertBefore(b,btn.querySelector('.ms-arrow'));}}
-function stWhere(col){col=col||'store_type_order';const checked=[...document.querySelectorAll('.st-cb:checked')].map(cb=>`'${cb.value}'`);return checked.length>0?`AND ${col} IN (${checked.join(',')})`:'';}let tCI=null,sCI=null,allExp=[],curBucket='ALL';
+// ─── Store type filter ───────────────────────────────────────────────────
+const STORE_TYPES = [
+  {v:'BUYER',label:'Buyer',cnt:19726},
+  {v:'SELF_SERVICE_STORE_PRIME',label:'Self-Service Prime',cnt:16031},
+  {v:'HOUSEHOLD',label:'Household',cnt:3039},
+  {v:'DIGITAL_BUYER',label:'Digital Buyer',cnt:1089},
+  {v:'OFFICES_INSTITUTIONS',label:'Offices & Institutions',cnt:339},
+  {v:'GENERAL_STORE',label:'General Store',cnt:293},
+  {v:'CORPORATE',label:'Corporate',cnt:183},
+  {v:'WHOLE_SELLER_PRIME',label:'Wholesaler Prime',cnt:151},
+  {v:'TEXTILE',label:'Textile',cnt:128},
+  {v:'CORPORATE_BUYER',label:'Corporate Buyer',cnt:109},
+  {v:'TRADER',label:'Trader',cnt:96},
+  {v:'PAINT_MANUFACTURERS',label:'Paint Manufacturers',cnt:52},
+  {v:'PAPER_N_PACKAGING',label:'Paper & Packaging',cnt:32},
+  {v:'WHOLE_SELLER',label:'Wholesaler',cnt:27},
+  {v:'HORECA',label:'HoReCa',cnt:17},
+  {v:'CHEMICAL_MANUFACTURER',label:'Chemical Manufacturer',cnt:12},
+  {v:'CONFECTIONARY',label:'Confectionary',cnt:10},
+  {v:'INDUSTRIAL',label:'Industrial',cnt:8},
+];
+
+(function buildMsItems(){
+  document.getElementById('msItems').innerHTML = STORE_TYPES.map(st=>`
+    <div class="ms-item">
+      <input type="checkbox" class="st-cb" id="cb_${st.v}" value="${st.v}" onchange="updateMsLabel()">
+      <label for="cb_${st.v}">${st.label}</label>
+      <span class="ms-cnt">${st.cnt.toLocaleString()}</span>
+    </div>`).join('');
+})();
+
+function toggleMsDropdown(){
+  document.getElementById('msBtn').classList.toggle('open');
+  document.getElementById('msDropdown').classList.toggle('open');
+}
+document.addEventListener('click', e=>{
+  if(!document.getElementById('msWrap').contains(e.target)){
+    document.getElementById('msBtn').classList.remove('open');
+    document.getElementById('msDropdown').classList.remove('open');
+  }
+});
+function msSelectAll(){ document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=true); updateMsLabel(); }
+function msClearAll(){ document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=false); updateMsLabel(); }
+function updateMsLabel(){
+  const checked=[...document.querySelectorAll('.st-cb:checked')];
+  const lbl=document.getElementById('msBtnLabel');
+  const btn=document.getElementById('msBtn');
+  const ex=btn.querySelector('.ms-count'); if(ex) ex.remove();
+  if(checked.length===0){ lbl.textContent='All Store Types'; }
+  else {
+    lbl.textContent='Store Types';
+    const b=document.createElement('span'); b.className='ms-count'; b.textContent=checked.length;
+    btn.insertBefore(b,btn.querySelector('.ms-arrow'));
+  }
+}
+function stWhere(col){
+  col=col||'store_type_order';
+  const checked=[...document.querySelectorAll('.st-cb:checked')].map(cb=>`'${cb.value}'`);
+  return checked.length>0?`AND ${col} IN (${checked.join(',')})`:'  ';
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────
+let tCI=null, sCI=null, allExp=[], curBucket='ALL';
 const N=n=>n==null?'—':Math.abs(n)>=1e6?(n/1e6).toFixed(1)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':Math.round(n).toLocaleString();
 const P=n=>n==null?'—':n.toFixed(1)+'%';
 const sd=()=>document.getElementById('sd').value;
 const ed=()=>document.getElementById('ed').value;
-function validateRange(){const s=new Date(sd()),e=new Date(ed()),days=(e-s)/(864e5);if(days>90){showErr('Date range cannot exceed 90 days.');return false;}if(days<0){showErr('Start date must be before end date.');return false;}hideErr();return true;}
+
+function validateRange(){
+  const s=new Date(sd()),e=new Date(ed()),days=(e-s)/(864e5);
+  if(days>90){showErr('Date range cannot exceed 90 days.');return false;}
+  if(days<0){showErr('Start date must be before end date.');return false;}
+  hideErr();return true;
+}
 function showErr(m){const b=document.getElementById('errBanner');b.textContent=m;b.style.display='block';}
 function hideErr(){document.getElementById('errBanner').style.display='none';}
 function setStatus(m){document.getElementById('statusMsg').textContent=m;}
-async function q(sql){const res=await fetch('/api/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:sql})});if(!res.ok){const txt=await res.text();throw new Error(txt||`HTTP ${res.status}`);}return await res.json();}
-const REFRESH_SECS=30*60;let secsLeft=REFRESH_SECS,autoTimer=null;
-function startCountdown(){clearInterval(autoTimer);secsLeft=REFRESH_SECS;autoTimer=setInterval(()=>{secsLeft--;const m=String(Math.floor(secsLeft/60)).padStart(2,'0');const s=String(secsLeft%60).padStart(2,'0');document.getElementById('countdown').textContent=`${m}:${s}`;if(secsLeft<=0){loadAll();}},1000);}
+
+// ─── Query via Vercel API route ───────────────────────────────────────────
+async function q(sql){
+  const res=await fetch('/api/query',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({query:sql})
+  });
+  if(!res.ok){
+    const txt=await res.text();
+    throw new Error(txt||`HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+// ─── Auto-refresh countdown (30 min) ─────────────────────────────────────
+const REFRESH_SECS = 30 * 60;
+let secsLeft = REFRESH_SECS;
+let autoTimer = null;
+
+function startCountdown(){
+  clearInterval(autoTimer);
+  secsLeft = REFRESH_SECS;
+  autoTimer = setInterval(()=>{
+    secsLeft--;
+    const m=String(Math.floor(secsLeft/60)).padStart(2,'0');
+    const s=String(secsLeft%60).padStart(2,'0');
+    document.getElementById('countdown').textContent=`${m}:${s}`;
+    if(secsLeft<=0){ loadAll(); }
+  },1000);
+}
+
+// ─── Data loaders ─────────────────────────────────────────────────────────
 async function loadTrend(){
-  const rows=await q(`SELECT CAST(order_date AS VARCHAR) AS d,COUNT(DISTINCT order_number) AS orders,COUNT(DISTINCT CASE WHEN (COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 THEN order_number END) AS disc_orders,SUM(COALESCE(basket_discount,0)) AS bd,SUM(COALESCE(item_discount,0)) AS id,SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td,SUM(gross_gmv) AS gmv FROM hive.bazaar_biz_silver.order_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY 1 ORDER BY 1`);
-  const tBd=rows.reduce((s,r)=>s+(r.bd||0),0),tId=rows.reduce((s,r)=>s+(r.id||0),0),tTd=rows.reduce((s,r)=>s+(r.td||0),0),tGmv=rows.reduce((s,r)=>s+(r.gmv||0),0),tOrd=rows.reduce((s,r)=>s+(r.orders||0),0),tDO=rows.reduce((s,r)=>s+(r.disc_orders||0),0),dPct=tGmv>0?tTd/tGmv*100:0;
-  document.getElementById('kpiRow').innerHTML=`<div class="kpi"><div class="lbl">Total Discount</div><div class="val">PKR ${N(tTd)}</div><div class="sub">PKR ${Math.round(tTd).toLocaleString()}</div></div><div class="kpi"><div class="lbl">Basket Discount</div><div class="val">PKR ${N(tBd)}</div><div class="sub">${P(tGmv>0?tBd/tGmv*100:0)} of GMV</div></div><div class="kpi"><div class="lbl">Item Discount</div><div class="val">PKR ${N(tId)}</div><div class="sub">${P(tGmv>0?tId/tGmv*100:0)} of GMV</div></div><div class="kpi ${dPct>=5?'alert':''}"><div class="lbl">Discount % of GMV</div><div class="val">${P(dPct)}</div><div class="sub">GMV: PKR ${N(tGmv)}</div></div><div class="kpi"><div class="lbl">Discounted Orders</div><div class="val">${tDO.toLocaleString()}</div><div class="sub">of ${tOrd.toLocaleString()} · ${P(tOrd>0?tDO/tOrd*100:0)}</div></div>`;
+  const rows=await q(`
+    SELECT CAST(order_date AS VARCHAR) AS d,
+      COUNT(DISTINCT order_number) AS orders,
+      COUNT(DISTINCT CASE WHEN (COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 THEN order_number END) AS disc_orders,
+      SUM(COALESCE(basket_discount,0)) AS bd,
+      SUM(COALESCE(item_discount,0)) AS id,
+      SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td,
+      SUM(gross_gmv) AS gmv
+    FROM hive.bazaar_biz_silver.order_booked
+    WHERE partition_key >= DATE '2026-06-01'
+      AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}'
+      AND order_status NOT IN ('CANCELLED')
+      ${stWhere('store_type_order')}
+    GROUP BY 1 ORDER BY 1
+  `);
+  const tBd=rows.reduce((s,r)=>s+(r.bd||0),0);
+  const tId=rows.reduce((s,r)=>s+(r.id||0),0);
+  const tTd=rows.reduce((s,r)=>s+(r.td||0),0);
+  const tGmv=rows.reduce((s,r)=>s+(r.gmv||0),0);
+  const tOrd=rows.reduce((s,r)=>s+(r.orders||0),0);
+  const tDO=rows.reduce((s,r)=>s+(r.disc_orders||0),0);
+  const dPct=tGmv>0?tTd/tGmv*100:0;
+  document.getElementById('kpiRow').innerHTML=`
+    <div class="kpi"><div class="lbl">Total Discount</div><div class="val">PKR ${N(tTd)}</div><div class="sub">PKR ${Math.round(tTd).toLocaleString()}</div></div>
+    <div class="kpi"><div class="lbl">Basket Discount</div><div class="val">PKR ${N(tBd)}</div><div class="sub">${P(tGmv>0?tBd/tGmv*100:0)} of GMV</div></div>
+    <div class="kpi"><div class="lbl">Item Discount</div><div class="val">PKR ${N(tId)}</div><div class="sub">${P(tGmv>0?tId/tGmv*100:0)} of GMV</div></div>
+    <div class="kpi ${dPct>=5?'alert':''}"><div class="lbl">Discount % of GMV</div><div class="val">${P(dPct)}</div><div class="sub">GMV: PKR ${N(tGmv)}</div></div>
+    <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val">${tDO.toLocaleString()}</div><div class="sub">of ${tOrd.toLocaleString()} · ${P(tOrd>0?tDO/tOrd*100:0)}</div></div>
+  `;
   document.getElementById('trendBadge').textContent=rows.length+' days';
   const ctx=document.getElementById('trendChart').getContext('2d');
-  if(tCI)tCI.destroy();
-  tCI=new Chart(ctx,{type:'line',data:{labels:rows.map(r=>r.d?r.d.substring(5,10):''),datasets:[
-    {label:'Total Discount',data:rows.map(r=>Math.round(r.td||0)),borderColor:'#1a2e4a',backgroundColor:'rgba(26,46,74,.08)',fill:true,tension:.35,pointRadius:3,borderWidth:2.5,yAxisID:'y'},
-    {label:'Item Discount',data:rows.map(r=>Math.round(r.id||0)),borderColor:'#f97316',fill:false,tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y'},
-    {label:'Basket Discount',data:rows.map(r=>Math.round(r.bd||0)),borderColor:'#10b981',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[5,3],yAxisID:'y'},
-    {label:'Discounted Orders',data:rows.map(r=>r.disc_orders||0),borderColor:'#a855f7',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[4,2],yAxisID:'y1'}
-  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+  if(tCI) tCI.destroy();
+  tCI=new Chart(ctx,{type:'line',data:{
+    labels:rows.map(r=>r.d?r.d.substring(5,10):''),
+    datasets:[
+      {label:'Total Discount',data:rows.map(r=>Math.round(r.td||0)),borderColor:'#1a2e4a',backgroundColor:'rgba(26,46,74,.08)',fill:true,tension:.35,pointRadius:3,borderWidth:2.5,yAxisID:'y'},
+      {label:'Item Discount',data:rows.map(r=>Math.round(r.id||0)),borderColor:'#f97316',fill:false,tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y'},
+      {label:'Basket Discount',data:rows.map(r=>Math.round(r.bd||0)),borderColor:'#10b981',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[5,3],yAxisID:'y'},
+      {label:'Discounted Orders',data:rows.map(r=>r.disc_orders||0),borderColor:'#a855f7',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[4,2],yAxisID:'y1'}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}},tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` ${c.dataset.label}: ${c.raw.toLocaleString()} orders`:` ${c.dataset.label}: PKR ${c.raw.toLocaleString()}`}}},
-    scales:{y:{position:'left',ticks:{callback:v=>'PKR '+(v>=1e6?(v/1e6).toFixed(1)+'M':(v>=1e3?(v/1e3).toFixed(0)+'K':v)),font:{size:10}},grid:{color:'#f1f5f9'}},y1:{position:'right',ticks:{callback:v=>v>=1e3?(v/1e3).toFixed(1)+'K':v,font:{size:10},color:'#a855f7'},grid:{drawOnChartArea:false}},x:{ticks:{font:{size:10}},grid:{display:false}}}
+    scales:{
+      y:{position:'left',ticks:{callback:v=>'PKR '+(v>=1e6?(v/1e6).toFixed(1)+'M':(v>=1e3?(v/1e3).toFixed(0)+'K':v)),font:{size:10}},grid:{color:'#f1f5f9'}},
+      y1:{position:'right',ticks:{callback:v=>v>=1e3?(v/1e3).toFixed(1)+'K':v,font:{size:10},color:'#a855f7'},grid:{drawOnChartArea:false}},
+      x:{ticks:{font:{size:10}},grid:{display:false}}
+    }
   }});
 }
-async function loadStore(){const rows=await q(`SELECT store_type_order AS st,SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td FROM hive.bazaar_biz_silver.order_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY 1 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 10`);const pal=['#1a2e4a','#f97316','#10b981','#3b82f6','#a855f7','#ef4444','#f59e0b','#06b6d4','#64748b','#84cc16'];const ctx=document.getElementById('storeChart').getContext('2d');if(sCI)sCI.destroy();sCI=new Chart(ctx,{type:'doughnut',data:{labels:rows.map(r=>r.st||'Unknown'),datasets:[{data:rows.map(r=>Math.round(r.td||0)),backgroundColor:pal,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}},stroke:{callbacks:{label:c=>` ${c.label}: PKR ${c.raw.toLocaleString()}`}},tooltip:{callbacks:{label:c=>` ${c.label}: PKR ${c.raw.toLocaleString()}`}}}}});}
-async function loadWH(){const rows=await q(`SELECT order_warehouse AS wh,store_type_order AS st,COUNT(DISTINCT order_number) AS ord,SUM(COALESCE(basket_discount,0)) AS bd,SUM(COALESCE(item_discount,0)) AS id,SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td,SUM(gross_gmv) AS gmv,ROUND((SUM(COALESCE(basket_discount,0))+SUM(COALESCE(item_discount,0)))/NULLIF(SUM(gross_gmv),0)*100,2) AS dp FROM hive.bazaar_biz_silver.order_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY 1,2 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 60`);document.getElementById('whBadge').textContent=rows.length+' rows';const mx=Math.max(...rows.map(r=>r.td||0));document.getElementById('whBody').innerHTML=rows.length?rows.map(r=>{const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low',bw=mx>0?Math.round((r.td||0)/mx*100):0;return `<tr><td><strong>${r.wh||'—'}</strong></td><td><span class="st-pill">${r.st||'—'}</span></td><td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">PKR ${N(r.bd)}</td><td class="num">PKR ${N(r.id)}</td><td class="num" style="font-weight:700;">PKR ${N(r.td)}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${bw}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">No data</td></tr>';}
-async function loadSKUs(){const rows=await q(`SELECT item_name,order_warehouse AS wh,store_type_order AS st,COUNT(DISTINCT order_number) AS ord,SUM(ordered_quantity) AS qty,SUM(item_discount) AS id,SUM(gross_gmv) AS gmv,ROUND(SUM(item_discount)/NULLIF(SUM(gross_gmv),0)*100,2) AS dp FROM hive.bazaar_biz_silver.order_item_booked WHERE partition_key >= DATE '2026-06-01' AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}' AND order_status NOT IN ('CANCELLED') AND item_discount>0 ${stWhere('store_type_order')} GROUP BY 1,2,3 ORDER BY id DESC LIMIT 30`);document.getElementById('skuBadge').textContent='Top '+rows.length;document.getElementById('skuBody').innerHTML=rows.length?rows.map((r,i)=>{const p=r.dp||0,cls=p>=20?'high':p>=10?'med':'low';return `<tr><td style="color:#94a3b8;font-size:11px;font-weight:700;">${i+1}</td><td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td><td><span class="st-pill">${r.st||'—'}</span></td><td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">${(r.qty||0).toLocaleString()}</td><td class="num" style="font-weight:700;color:#1a2e4a;">PKR ${N(r.id)}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*3,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No data</td></tr>';}
+
+async function loadStore(){
+  const rows=await q(`
+    SELECT store_type_order AS st,
+      SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td
+    FROM hive.bazaar_biz_silver.order_booked
+    WHERE partition_key >= DATE '2026-06-01'
+      AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}'
+      AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')}
+    GROUP BY 1 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0
+    ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 10
+  `);
+  const pal=['#1a2e4a','#f97316','#10b981','#3b82f6','#a855f7','#ef4444','#f59e0b','#06b6d4','#64748b','#84cc16'];
+  const ctx=document.getElementById('storeChart').getContext('2d');
+  if(sCI) sCI.destroy();
+  sCI=new Chart(ctx,{type:'doughnut',data:{
+    labels:rows.map(r=>r.st||'Unknown'),
+    datasets:[{data:rows.map(r=>Math.round(r.td||0)),backgroundColor:pal,borderWidth:2,borderColor:'#fff'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: PKR ${c.raw.toLocaleString()}`}}}
+  }});
+}
+
+async function loadWH(){
+  const rows=await q(`
+    SELECT order_warehouse AS wh, store_type_order AS st,
+      COUNT(DISTINCT order_number) AS ord,
+      SUM(COALESCE(basket_discount,0)) AS bd,
+      SUM(COALESCE(item_discount,0)) AS id,
+      SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) AS td,
+      SUM(gross_gmv) AS gmv,
+      ROUND((SUM(COALESCE(basket_discount,0))+SUM(COALESCE(item_discount,0)))/NULLIF(SUM(gross_gmv),0)*100,2) AS dp
+    FROM hive.bazaar_biz_silver.order_booked
+    WHERE partition_key >= DATE '2026-06-01'
+      AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}'
+      AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')}
+    GROUP BY 1,2 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0
+    ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 60
+  `);
+  document.getElementById('whBadge').textContent=rows.length+' rows';
+  const mx=Math.max(...rows.map(r=>r.td||0));
+  document.getElementById('whBody').innerHTML=rows.length?rows.map(r=>{
+    const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low',bw=mx>0?Math.round((r.td||0)/mx*100):0;
+    return `<tr><td><strong>${r.wh||'—'}</strong></td><td><span class="st-pill">${r.st||'—'}</span></td>
+      <td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">PKR ${N(r.bd)}</td>
+      <td class="num">PKR ${N(r.id)}</td><td class="num" style="font-weight:700;">PKR ${N(r.td)}</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${bw}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">No data for selection</td></tr>';
+}
+
+async function loadSKUs(){
+  const rows=await q(`
+    SELECT item_name, order_warehouse AS wh, store_type_order AS st,
+      COUNT(DISTINCT order_number) AS ord, SUM(ordered_quantity) AS qty,
+      SUM(item_discount) AS id, SUM(gross_gmv) AS gmv,
+      ROUND(SUM(item_discount)/NULLIF(SUM(gross_gmv),0)*100,2) AS dp
+    FROM hive.bazaar_biz_silver.order_item_booked
+    WHERE partition_key >= DATE '2026-06-01'
+      AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}'
+      AND order_status NOT IN ('CANCELLED') AND item_discount>0 ${stWhere('store_type_order')}
+    GROUP BY 1,2,3 ORDER BY id DESC LIMIT 30
+  `);
+  document.getElementById('skuBadge').textContent='Top '+rows.length;
+  document.getElementById('skuBody').innerHTML=rows.length?rows.map((r,i)=>{
+    const p=r.dp||0,cls=p>=20?'high':p>=10?'med':'low';
+    return `<tr><td style="color:#94a3b8;font-size:11px;font-weight:700;">${i+1}</td>
+      <td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td>
+      <td><span class="st-pill">${r.st||'—'}</span></td>
+      <td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">${(r.qty||0).toLocaleString()}</td>
+      <td class="num" style="font-weight:700;color:#1a2e4a;">PKR ${N(r.id)}</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*3,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No data for selection</td></tr>';
+}
+
 async function loadExpiry(){
-  const [invRows,ordRows]=await Promise.all([
-    q(`SELECT inv.item_name,inv.warehouse AS wh,inv.expiry_date AS exp,DATE_DIFF('day',CURRENT_DATE,inv.expiry_date) AS dte,SUM(inv.balance_sale) AS bal_sale,MAX(inv.uom_sale_name) AS uom,ROUND(SUM(inv.balance_sale*COALESCE(CAST(inv.mrp AS DOUBLE),0)),0) AS inv_value,MAX(CAST(inv.snapshot_date AS VARCHAR)) AS snap_dt,CASE WHEN DATE_DIFF('day',CURRENT_DATE,inv.expiry_date)<0 THEN 'EXPIRED' WHEN DATE_DIFF('day',CURRENT_DATE,inv.expiry_date)<=30 THEN '0-30 days' WHEN DATE_DIFF('day',CURRENT_DATE,inv.expiry_date)<=60 THEN '31-60 days' ELSE '61-90 days' END AS bucket FROM hive.bazaar_ops_silver.warehouse_inventory_batch_snapshot inv WHERE inv.partition_key>=DATE '2026-06-01' AND inv.snapshot_date=(SELECT MAX(snapshot_date) FROM hive.bazaar_ops_silver.warehouse_inventory_batch_snapshot WHERE partition_key>=DATE '2026-06-01') AND inv.expiry_date>DATE '2020-01-01' AND inv.expiry_date<=CURRENT_DATE+INTERVAL '90' DAY AND inv.balance_stock>0 GROUP BY inv.item_name,inv.warehouse,inv.expiry_date ORDER BY dte ASC LIMIT 500`),
-    q(`SELECT item_name,SUM(COALESCE(item_discount,0)) AS dg,SUM(COALESCE(ordered_quantity,0)) AS qs FROM hive.bazaar_biz_silver.order_item_booked WHERE partition_key>=DATE '2026-06-01' AND order_date>=DATE '${sd()}' AND order_date<=DATE '${ed()}' AND order_status NOT IN ('CANCELLED') ${stWhere('store_type_order')} GROUP BY item_name`)
+  // Split into 2 parallel queries — avoids the slow cross-table JOIN
+  const [invRows, ordRows] = await Promise.all([
+    // Query 1: inventory snapshot only (fast — no join)
+    q(`SELECT inv.item_name, inv.warehouse AS wh, inv.expiry_date AS exp,
+      DATE_DIFF('day', CURRENT_DATE, inv.expiry_date) AS dte,
+      SUM(inv.balance_sale) AS bal_sale,
+      MAX(inv.uom_sale_name) AS uom,
+      ROUND(SUM(inv.balance_sale * COALESCE(CAST(inv.mrp AS DOUBLE), 0)), 0) AS inv_value,
+      MAX(CAST(inv.snapshot_date AS VARCHAR)) AS snap_dt,
+      CASE
+        WHEN DATE_DIFF('day', CURRENT_DATE, inv.expiry_date) < 0 THEN 'EXPIRED'
+        WHEN DATE_DIFF('day', CURRENT_DATE, inv.expiry_date) <= 30 THEN '0-30 days'
+        WHEN DATE_DIFF('day', CURRENT_DATE, inv.expiry_date) <= 60 THEN '31-60 days'
+        ELSE '61-90 days'
+      END AS bucket
+    FROM hive.bazaar_ops_silver.warehouse_inventory_batch_snapshot inv
+    WHERE inv.partition_key >= DATE '2026-06-01'
+      AND inv.snapshot_date = (SELECT MAX(snapshot_date) FROM hive.bazaar_ops_silver.warehouse_inventory_batch_snapshot WHERE partition_key >= DATE '2026-06-01')
+      AND inv.expiry_date > DATE '2020-01-01'
+      AND inv.expiry_date <= CURRENT_DATE + INTERVAL '90' DAY
+      AND inv.balance_stock > 0
+    GROUP BY inv.item_name, inv.warehouse, inv.expiry_date
+    ORDER BY dte ASC LIMIT 500`),
+
+    // Query 2: order discounts by item in the selected period (fast — no join)
+    q(`SELECT item_name,
+      SUM(COALESCE(item_discount, 0)) AS dg,
+      SUM(COALESCE(ordered_quantity, 0)) AS qs
+    FROM hive.bazaar_biz_silver.order_item_booked
+    WHERE partition_key >= DATE '2026-06-01'
+      AND order_date >= DATE '${sd()}' AND order_date <= DATE '${ed()}'
+      AND order_status NOT IN ('CANCELLED')
+      ${stWhere('store_type_order')}
+    GROUP BY item_name`)
   ]);
-  const ordMap={};ordRows.forEach(r=>{ordMap[r.item_name]=r;});
-  allExp=invRows.map(r=>{const ord=ordMap[r.item_name]||{};return{...r,dg:ord.dg||0,qs:ord.qs||0};});
+
+  // Merge on item_name client-side (instant)
+  const ordMap = {};
+  ordRows.forEach(r => { ordMap[r.item_name] = r; });
+  allExp = invRows.map(r => {
+    const ord = ordMap[r.item_name] || {};
+    return { ...r, dg: ord.dg || 0, qs: ord.qs || 0 };
+  });
+
   const snapDt=allExp.length&&allExp[0].snap_dt?allExp[0].snap_dt.substring(0,10):'';
-  if(snapDt)document.getElementById('expSnapshotDate').textContent='Snapshot: '+snapDt;
+  if(snapDt) document.getElementById('expSnapshotDate').textContent='Snapshot: '+snapDt;
   const cnts={ALL:allExp.length,EXPIRED:0,'0-30 days':0,'31-60 days':0,'61-90 days':0};
-  allExp.forEach(r=>{if(cnts[r.bucket]!==undefined)cnts[r.bucket]++;});
+  allExp.forEach(r=>{if(cnts[r.bucket]!==undefined) cnts[r.bucket]++;});
   document.getElementById('expBadge').textContent=allExp.length+' items';
-  document.querySelectorAll('.tab').forEach(t=>{const b=t.dataset.b;t.textContent=t.textContent.replace(/\s*\(\d+\)$/,'')+` (${cnts[b]||0})`;});
+  document.querySelectorAll('.tab').forEach(t=>{
+    const b=t.dataset.b;
+    t.textContent=t.textContent.replace(/\s*\(\d+\)$/,'')+` (${cnts[b]||0})`;
+  });
   renderExp(curBucket);
 }
-function renderExp(bucket){curBucket=bucket;const data=bucket==='ALL'?allExp:allExp.filter(r=>r.bucket===bucket);const tbody=document.getElementById('expBody');if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No items</td></tr>';return;}tbody.innerHTML=data.map(r=>{const d=r.dte,ec=d<0?'exp-crit':d<=7?'exp-crit':d<=30?'exp-warn':'exp-ok';const dl=d<0?`${Math.abs(d)}d ago`:`${d}d`;const disc=(r.dg||0)>0;const badge=r.bucket==='EXPIRED'?'<span class="s-exp">EXPIRED</span>':disc?'<span class="s-disc">✓ Discounted</span>':'<span class="s-none">⚠ No Discount</span>';const stockLabel=(r.bal_sale!=null&&r.uom)?`${Math.round(r.bal_sale).toLocaleString()} <span style="font-size:10px;color:#94a3b8;">${r.uom}</span>`:(r.bal_sale!=null?Math.round(r.bal_sale).toLocaleString():'—');const invVal=(r.inv_value&&r.inv_value>0)?'PKR '+N(r.inv_value):'—';return `<tr><td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td><td class="num"><span class="${ec}">${dl}</span></td><td>${r.exp?r.exp.substring(0,10):'—'}</td><td class="num">${stockLabel}</td><td class="num" style="font-weight:600;">${invVal}</td><td class="num">${(r.qs||0).toLocaleString()}</td><td class="num" style="font-weight:600;">${disc?'PKR '+N(r.dg):'—'}</td><td>${badge}</td></tr>`;}).join('');}
-function switchTab(btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');renderExp(btn.dataset.b);}
-async function loadAll(){if(!validateRange())return;const btn=document.getElementById('refBtn');btn.disabled=true;setStatus('Loading data…');document.getElementById('kpiRow').innerHTML=['Total Discount','Basket Discount','Item Discount','Discount % of GMV','Discounted Orders'].map(l=>`<div class="kpi"><div class="lbl">${l}</div><div class="val sk" style="height:28px;width:100px;margin-bottom:6px;"></div></div>`).join('');['whBody','skuBody','expBody'].forEach(id=>{document.getElementById(id).innerHTML='<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';});try{await Promise.all([loadTrend(),loadStore(),loadWH(),loadSKUs(),loadExpiry()]);document.getElementById('lastUp').textContent='Updated '+new Date().toLocaleTimeString();setStatus('');startCountdown();}catch(e){showErr('Error loading data: '+e.message);setStatus('');}finally{btn.disabled=false;}}
+
+function renderExp(bucket){
+  curBucket=bucket;
+  const data=bucket==='ALL'?allExp:allExp.filter(r=>r.bucket===bucket);
+  const tbody=document.getElementById('expBody');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No items in this category</td></tr>';return;}
+  tbody.innerHTML=data.map(r=>{
+    const d=r.dte,ec=d<0?'exp-crit':d<=7?'exp-crit':d<=30?'exp-warn':'exp-ok';
+    const dl=d<0?`${Math.abs(d)}d ago`:`${d}d`;
+    const disc=(r.dg||0)>0;
+    const badge=r.bucket==='EXPIRED'?'<span class="s-exp">EXPIRED</span>':disc?'<span class="s-disc">✓ Discounted</span>':'<span class="s-none">⚠ No Discount</span>';
+    const stockLabel=(r.bal_sale!=null&&r.uom)?`${Math.round(r.bal_sale).toLocaleString()} <span style="font-size:10px;color:#94a3b8;">${r.uom}</span>`:(r.bal_sale!=null?Math.round(r.bal_sale).toLocaleString():'—');
+    const invVal=(r.inv_value&&r.inv_value>0)?'PKR '+N(r.inv_value):'—';
+    return `<tr><td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td>
+      <td class="num"><span class="${ec}">${dl}</span></td><td>${r.exp?r.exp.substring(0,10):'—'}</td>
+      <td class="num">${stockLabel}</td><td class="num" style="font-weight:600;">${invVal}</td>
+      <td class="num">${(r.qs||0).toLocaleString()}</td>
+      <td class="num" style="font-weight:600;">${disc?'PKR '+N(r.dg):'—'}</td><td>${badge}</td></tr>`;
+  }).join('');
+}
+
+function switchTab(btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  renderExp(btn.dataset.b);
+}
+
+async function loadAll(){
+  if(!validateRange()) return;
+  const btn=document.getElementById('refBtn');
+  btn.disabled=true; setStatus('Loading data…');
+  document.getElementById('kpiRow').innerHTML=
+    ['Total Discount','Basket Discount','Item Discount','Discount % of GMV','Discounted Orders']
+    .map(l=>`<div class="kpi"><div class="lbl">${l}</div><div class="val sk" style="height:28px;width:100px;margin-bottom:6px;"></div></div>`).join('');
+  ['whBody','skuBody','expBody'].forEach(id=>{
+    document.getElementById(id).innerHTML='<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';
+  });
+  try {
+    await Promise.all([loadTrend(),loadStore(),loadWH(),loadSKUs(),loadExpiry()]);
+    document.getElementById('lastUp').textContent='Updated '+new Date().toLocaleTimeString();
+    setStatus('');
+    startCountdown();
+  } catch(e) {
+    showErr('Error loading data: '+e.message);
+    setStatus('');
+  } finally { btn.disabled=false; }
+}
 
 // ─── Order Level View ─────────────────────────────────────────────────────
-const ORD_PAGE_SIZE=200;
-let ordPage=0,allOrderRows=[],ordHasMore=false;
-const ordSd=()=>document.getElementById('ord_sd').value;
-const ordEd=()=>document.getElementById('ord_ed').value;
-function validateOrdRange(){const s=new Date(ordSd()),e=new Date(ordEd()),days=(e-s)/(864e5);if(days<0){document.getElementById('ordErrMsg').textContent='Start must be before end.';return false;}if(days>92){document.getElementById('ordErrMsg').textContent='Max range is 3 months.';return false;}document.getElementById('ordErrMsg').textContent='';return true;}
+const ORD_PAGE_SIZE = 200;
+let ordPage = 0;
+let allOrderRows = [];
+let ordHasMore = false;
+
+const ordSd = () => document.getElementById('ord_sd').value;
+const ordEd = () => document.getElementById('ord_ed').value;
+
+function validateOrdRange(){
+  const s=new Date(ordSd()),e=new Date(ordEd()),days=(e-s)/(864e5);
+  if(days<0){document.getElementById('ordErrMsg').textContent='Start must be before end.';return false;}
+  if(days>92){document.getElementById('ordErrMsg').textContent='Max range is 3 months.';return false;}
+  document.getElementById('ordErrMsg').textContent='';
+  return true;
+}
+
 async function loadOrders(reset=true){
-  if(!validateOrdRange())return;
-  if(reset){ordPage=0;allOrderRows=[];}
+  if(!validateOrdRange()) return;
+  if(reset){ ordPage=0; allOrderRows=[]; }
   const offset=ordPage*ORD_PAGE_SIZE;
-  if(reset){document.getElementById('orderBody').innerHTML='<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';document.getElementById('ordLoadMoreBtn').style.display='none';document.getElementById('ordCountMsg').textContent='';}
-  try{
-    const rows=await q(`SELECT order_number,CAST(order_date AS VARCHAR) AS ord_date,order_warehouse AS wh,store_type_order AS st,COALESCE(basket_discount,0) AS bd,COALESCE(item_discount,0) AS id,COALESCE(basket_discount,0)+COALESCE(item_discount,0) AS td,gross_gmv AS gmv,ROUND((COALESCE(basket_discount,0)+COALESCE(item_discount,0))/NULLIF(gross_gmv,0)*100,2) AS dp FROM hive.bazaar_biz_silver.order_booked WHERE partition_key>=DATE '2026-06-01' AND order_date>=DATE '${ordSd()}' AND order_date<=DATE '${ordEd()}' AND order_status NOT IN ('CANCELLED') AND (COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0 ${stWhere('store_type_order')} ORDER BY order_date DESC,order_number LIMIT ${ORD_PAGE_SIZE+1} OFFSET ${offset}`);
-    ordHasMore=rows.length>ORD_PAGE_SIZE;
-    const pageRows=ordHasMore?rows.slice(0,ORD_PAGE_SIZE):rows;
-    allOrderRows=[...allOrderRows,...pageRows];
+  if(reset){
+    document.getElementById('orderBody').innerHTML=
+      '<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';
+    document.getElementById('ordLoadMoreBtn').style.display='none';
+    document.getElementById('ordCountMsg').textContent='';
+  }
+  try {
+    const rows=await q(`
+      SELECT order_number, ord_date, wh, st, bd, id, td, gmv, dp
+      FROM (
+        SELECT order_number,
+          CAST(order_date AS VARCHAR) AS ord_date,
+          order_warehouse AS wh,
+          store_type_order AS st,
+          COALESCE(basket_discount,0) AS bd,
+          COALESCE(item_discount,0) AS id,
+          COALESCE(basket_discount,0)+COALESCE(item_discount,0) AS td,
+          gross_gmv AS gmv,
+          ROUND((COALESCE(basket_discount,0)+COALESCE(item_discount,0))/NULLIF(gross_gmv,0)*100,2) AS dp,
+          ROW_NUMBER() OVER (ORDER BY order_date DESC, order_number) AS rn
+        FROM hive.bazaar_biz_silver.order_booked
+        WHERE partition_key >= DATE '2026-06-01'
+          AND order_date >= DATE '${ordSd()}' AND order_date <= DATE '${ordEd()}'
+          AND order_status NOT IN ('CANCELLED')
+          AND (COALESCE(basket_discount,0)+COALESCE(item_discount,0)) > 0
+          ${stWhere('store_type_order')}
+      ) t
+      WHERE rn > ${offset} AND rn <= ${offset + ORD_PAGE_SIZE + 1}
+      ORDER BY rn
+    `);
+    ordHasMore = rows.length > ORD_PAGE_SIZE;
+    const pageRows = ordHasMore ? rows.slice(0,ORD_PAGE_SIZE) : rows;
+    allOrderRows = [...allOrderRows, ...pageRows];
     ordPage++;
     renderOrders();
-    document.getElementById('ordLoadMoreBtn').style.display=ordHasMore?'inline-flex':'none';
-    document.getElementById('orderBadge').textContent=allOrderRows.length+(ordHasMore?'+':'')+' orders';
-    document.getElementById('ordCountMsg').textContent=ordHasMore?`Showing ${allOrderRows.length} orders — more available`:`${allOrderRows.length} orders total`;
-  }catch(e){document.getElementById('orderBody').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:28px;color:#b91c1c;">Error: ${e.message}</td></tr>`;}
+    document.getElementById('ordLoadMoreBtn').style.display = ordHasMore ? 'inline-flex' : 'none';
+    document.getElementById('orderBadge').textContent = allOrderRows.length+(ordHasMore?'+':'')+' orders';
+    document.getElementById('ordCountMsg').textContent = ordHasMore
+      ? `Showing ${allOrderRows.length} orders — more available`
+      : `${allOrderRows.length} orders total`;
+  } catch(e) {
+    document.getElementById('orderBody').innerHTML=
+      `<tr><td colspan="9" style="text-align:center;padding:28px;color:#b91c1c;">Error: ${e.message}</td></tr>`;
+  }
 }
-function renderOrders(){const tbody=document.getElementById('orderBody');if(!allOrderRows.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No discounted orders found</td></tr>';return;}tbody.innerHTML=allOrderRows.map(r=>{const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low',dt=r.ord_date?r.ord_date.substring(0,10):'—';return `<tr><td style="font-family:monospace;font-size:12px;">${r.order_number||'—'}</td><td>${dt}</td><td>${r.wh||'—'}</td><td><span class="st-pill">${r.st||'—'}</span></td><td class="num">PKR ${N(r.bd)}</td><td class="num">PKR ${N(r.id)}</td><td class="num" style="font-weight:700;">PKR ${N(r.td)}</td><td class="num">${r.gmv!=null?'PKR '+N(r.gmv):'—'}</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*4,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;}).join('');}
-function exportOrderCSV(){if(!allOrderRows.length){alert('No data loaded yet. Click Load first.');return;}const cols=['order_number','ord_date','wh','st','bd','id','td','gmv','dp'];const hdrs=['Order Number','Date','Warehouse','Store Type','Basket Discount','Item Discount','Total Discount','GMV','Disc %'];const csv=[hdrs.join(','),...allOrderRows.map(r=>cols.map(c=>{const v=r[c]??'';return typeof v==='string'&&v.includes(',')? `"${v}"`:v;}).join(','))].join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`discounted_orders_${ordSd()}_to_${ordEd()}.csv`;a.click();}
+
+function renderOrders(){
+  const tbody=document.getElementById('orderBody');
+  if(!allOrderRows.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No discounted orders found</td></tr>';
+    return;
+  }
+  tbody.innerHTML=allOrderRows.map(r=>{
+    const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low';
+    const dt=r.ord_date?r.ord_date.substring(0,10):'—';
+    return `<tr>
+      <td style="font-family:monospace;font-size:12px;">${r.order_number||'—'}</td>
+      <td>${dt}</td>
+      <td>${r.wh||'—'}</td>
+      <td><span class="st-pill">${r.st||'—'}</span></td>
+      <td class="num">PKR ${N(r.bd)}</td>
+      <td class="num">PKR ${N(r.id)}</td>
+      <td class="num" style="font-weight:700;">PKR ${N(r.td)}</td>
+      <td class="num">${r.gmv!=null?'PKR '+N(r.gmv):'—'}</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*4,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportOrderCSV(){
+  if(!allOrderRows.length){alert('No data loaded yet. Click Load first.');return;}
+  const cols=['order_number','ord_date','wh','st','bd','id','td','gmv','dp'];
+  const hdrs=['Order Number','Date','Warehouse','Store Type','Basket Discount','Item Discount','Total Discount','GMV','Disc %'];
+  const csv=[hdrs.join(','),...allOrderRows.map(r=>cols.map(c=>{
+    const v=r[c]??'';
+    return typeof v==='string'&&v.includes(',')? `"${v}"`:v;
+  }).join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`discounted_orders_${ordSd()}_to_${ordEd()}.csv`;
+  a.click();
+}
 
 window.addEventListener('load',()=>{
   const today=new Date();
   const fmt=d=>d.toISOString().split('T')[0];
-  const start=new Date(today);start.setDate(today.getDate()-29);
+  const start=new Date(today); start.setDate(today.getDate()-29);
   document.getElementById('ed').value=fmt(today);
   document.getElementById('sd').value=fmt(start);
-  const ordStart=new Date(today);ordStart.setDate(today.getDate()-6);
+  // Order view defaults to 7 days back from today
+  const ordStart=new Date(today); ordStart.setDate(today.getDate()-7);
   document.getElementById('ord_ed').value=fmt(today);
   document.getElementById('ord_sd').value=fmt(ordStart);
   loadAll();
