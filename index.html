@@ -3,266 +3,391 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Discounting Review Dashboard</title>
+<title>Discounting Dashboard · Bazaar</title>
 <style>
-:root { color-scheme: light; }
+:root{
+  color-scheme: light;
+  --pri:#4997D0; --pri-d:#3079B0; --pri-dd:#1F5375; --pri-l:#EAF3FA; --pri-ll:#F5FAFD;
+  --ink:#1e293b; --mute:#64748b; --faint:#94a3b8; --line:#e2e8f0; --line-soft:#f1f5f9;
+  --bg:#f4f7fa; --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+}
 *{ box-sizing:border-box; margin:0; padding:0; }
-body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f0f4f8; color:#1e293b; font-size:14px; }
+body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
 
-.header{ background:linear-gradient(135deg,#1a2e4a 0%,#243b55 100%); color:#fff; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; }
-.header h1{ font-size:18px; font-weight:700; letter-spacing:-0.3px; }
-.header .sub{ font-size:12px; opacity:0.65; margin-top:3px; }
-.header-right{ text-align:right; font-size:11px; opacity:.7; line-height:1.8; }
-.countdown{ font-size:13px; font-weight:700; opacity:1 !important; color:#f97316; }
+.app{ display:flex; min-height:100vh; }
+.sidebar{ width:232px; flex-shrink:0; background:#fff; border-right:1px solid var(--line); display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0; z-index:50; }
+.brand{ padding:20px 20px 18px; border-bottom:1px solid var(--line-soft); }
+.brand .mark{ width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg,var(--pri) 0%,var(--pri-dd) 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:15px; margin-bottom:11px; }
+.brand .name{ font-size:14px; font-weight:800; letter-spacing:-.2px; }
+.brand .who{ font-size:11px; color:var(--faint); margin-top:2px; }
+.nav{ padding:14px 12px; flex:1; overflow-y:auto; }
+.nav-lbl{ font-size:10px; font-weight:800; color:var(--faint); text-transform:uppercase; letter-spacing:.7px; padding:10px 10px 6px; }
+.nav-item{ display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:9px; font-size:13.5px; font-weight:600; color:var(--mute); cursor:pointer; user-select:none; transition:background .12s,color .12s; margin-bottom:2px; }
+.nav-item:hover{ background:var(--pri-ll); color:var(--ink); }
+.nav-item.on{ background:var(--pri-l); color:var(--pri-d); font-weight:700; }
+.nav-item .ic{ width:17px; text-align:center; font-size:14px; flex-shrink:0; }
+.side-foot{ border-top:1px solid var(--line-soft); padding:14px 18px; }
+.side-foot .u{ font-size:13px; font-weight:700; }
+.side-foot .r{ font-size:11px; color:var(--faint); margin-top:1px; }
 
-.controls{ background:#fff; padding:12px 24px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-.ctrl-label{ font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
-input[type=date]{ border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:13px; color:#1e293b; background:#f8fafc; }
-.btn{ padding:7px 18px; border:none; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
-.btn-primary{ background:#1a2e4a; color:#fff; }
-.btn-primary:hover{ background:#243b55; }
-.btn-primary:disabled{ opacity:.55; cursor:not-allowed; }
-.range-hint{ font-size:11px; color:#94a3b8; }
-.err-banner{ background:#fee2e2; border:1px solid #fca5a5; border-radius:6px; padding:8px 14px; color:#b91c1c; font-size:12px; display:none; }
+.content{ flex:1; margin-left:232px; min-width:0; }
+.topbar{ background:#fff; border-bottom:1px solid var(--line); padding:15px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.topbar h1{ font-size:17px; font-weight:800; letter-spacing:-.3px; }
+.topbar .sub{ font-size:12px; color:var(--faint); margin-top:2px; }
+.topbar-right{ text-align:right; font-size:11px; color:var(--faint); line-height:1.8; }
+.countdown{ font-size:13px; font-weight:700; color:var(--pri-d); }
 
-/* Multi-select store type */
+.controls{ background:#fff; padding:11px 26px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ctrl-label{ font-size:11px; font-weight:700; color:var(--mute); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+input[type=date],input[type=text],select{ border:1px solid #cbd5e1; border-radius:7px; padding:6px 10px; font-size:13px; color:var(--ink); background:#f8fafc; font-family:inherit; }
+input[type=date]:focus,input[type=text]:focus,select:focus{ outline:2px solid var(--pri-l); border-color:var(--pri); }
+.btn{ padding:7px 17px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s; font-family:inherit; }
+.btn-primary{ background:var(--pri); color:#fff; }
+.btn-primary:hover{ background:var(--pri-d); }
+.btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+.btn-ghost{ background:#f1f5f9; color:var(--ink); border:1px solid var(--line); }
+.btn-ghost:hover{ background:#e8eef4; }
+.range-hint{ font-size:11px; color:var(--faint); }
+.err-banner{ background:#fee2e2; border:1px solid #fca5a5; border-radius:7px; padding:8px 14px; color:#b91c1c; font-size:12px; display:none; }
+
 .ms-wrap{ position:relative; }
-.ms-btn{ display:flex; align-items:center; gap:7px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; padding:6px 12px; font-size:13px; font-weight:600; color:#1e293b; cursor:pointer; white-space:nowrap; user-select:none; }
-.ms-btn:hover{ background:#f1f5f9; border-color:#94a3b8; }
-.ms-btn .ms-arrow{ font-size:10px; color:#94a3b8; transition:transform .15s; }
+.ms-btn{ display:flex; align-items:center; gap:7px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; user-select:none; }
+.ms-btn:hover{ background:#f1f5f9; border-color:var(--pri); }
+.ms-btn .ms-arrow{ font-size:10px; color:var(--faint); transition:transform .15s; }
 .ms-btn.open .ms-arrow{ transform:rotate(180deg); }
-.ms-count{ background:#1a2e4a; color:#fff; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; }
-.ms-dropdown{ position:absolute; top:calc(100% + 6px); left:0; z-index:100; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:240px; max-height:380px; overflow-y:auto; display:none; }
+.ms-count{ background:var(--pri); color:#fff; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; }
+.ms-dropdown{ position:absolute; top:calc(100% + 6px); left:0; z-index:100; background:#fff; border:1px solid var(--line); border-radius:11px; box-shadow:0 10px 28px rgba(15,40,70,.13); min-width:250px; max-height:380px; overflow-y:auto; display:none; }
 .ms-dropdown.open{ display:block; }
-.ms-top{ display:flex; gap:6px; padding:10px 12px; border-bottom:1px solid #f1f5f9; }
-.ms-top button{ font-size:11px; font-weight:700; border:none; background:none; color:#2563eb; cursor:pointer; padding:2px 6px; border-radius:4px; }
-.ms-top button:hover{ background:#eff6ff; }
-.ms-item{ display:flex; align-items:center; gap:9px; padding:8px 14px; cursor:pointer; transition:background .1s; }
-.ms-item:hover{ background:#f8fafc; }
+.ms-top{ display:flex; gap:6px; padding:10px 12px; border-bottom:1px solid var(--line-soft); }
+.ms-top button{ font-size:11px; font-weight:700; border:none; background:none; color:var(--pri-d); cursor:pointer; padding:2px 6px; border-radius:5px; }
+.ms-top button:hover{ background:var(--pri-l); }
+.ms-item{ display:flex; align-items:center; gap:9px; padding:8px 14px; cursor:pointer; }
+.ms-item:hover{ background:var(--pri-ll); }
 .ms-item label{ cursor:pointer; font-size:13px; flex:1; }
-.ms-item input[type=checkbox]{ width:14px; height:14px; accent-color:#1a2e4a; cursor:pointer; }
-.ms-cnt{ font-size:11px; color:#94a3b8; margin-left:auto; }
+.ms-item input[type=checkbox]{ width:14px; height:14px; accent-color:var(--pri); cursor:pointer; }
+.ms-cnt{ font-size:11px; color:var(--faint); margin-left:auto; }
 
-.main{ padding:18px 24px; }
+.main{ padding:20px 26px 40px; }
+.view{ display:none; } .view.on{ display:block; }
 
 .kpi-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:18px; }
-.kpi{ background:#fff; border-radius:10px; padding:16px 18px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,.04); }
-.kpi .lbl{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; margin-bottom:8px; }
-.kpi .val{ font-size:22px; font-weight:800; color:#1a2e4a; line-height:1.1; }
-.kpi .sub{ font-size:11px; color:#94a3b8; margin-top:5px; }
-.kpi.alert .val{ color:#dc2626; }
+.kpi{ background:#fff; border-radius:11px; padding:16px 18px; border:1px solid var(--line); box-shadow:0 1px 3px rgba(30,60,90,.04); }
+.kpi .lbl{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--mute); margin-bottom:8px; }
+.kpi .val{ font-size:22px; font-weight:800; color:var(--pri-dd); line-height:1.1; }
+.kpi .sub{ font-size:11px; color:var(--faint); margin-top:5px; }
+.kpi.alert .val{ color:var(--bad); }
 
 .row2{ display:grid; grid-template-columns:1fr 320px; gap:14px; margin-bottom:16px; }
-
-.card{ background:#fff; border-radius:10px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,.04); overflow:hidden; margin-bottom:16px; }
-.card-hdr{ padding:13px 18px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; }
+.card{ background:#fff; border-radius:11px; border:1px solid var(--line); box-shadow:0 1px 3px rgba(30,60,90,.04); overflow:hidden; margin-bottom:16px; }
+.card-hdr{ padding:13px 18px; border-bottom:1px solid var(--line-soft); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
 .card-hdr h3{ font-size:14px; font-weight:700; }
-.badge{ background:#eff6ff; color:#2563eb; font-size:11px; font-weight:700; padding:3px 9px; border-radius:12px; }
+.badge{ background:var(--pri-l); color:var(--pri-d); font-size:11px; font-weight:700; padding:3px 9px; border-radius:12px; }
 .card-body{ padding:16px 18px; }
+.chart-wrap,.donut-wrap{ height:230px; position:relative; }
 
-.chart-wrap{ height:230px; position:relative; }
-.donut-wrap{ height:230px; position:relative; }
-
-.tbl-wrap{ max-height:340px; overflow-y:auto; }
-.tbl-wrap::-webkit-scrollbar{ width:4px; }
-.tbl-wrap::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:2px; }
+.tbl-wrap{ max-height:340px; overflow:auto; }
+.tbl-wrap::-webkit-scrollbar{ width:6px; height:6px; }
+.tbl-wrap::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:3px; }
 table.dt{ width:100%; border-collapse:collapse; font-size:13px; }
-table.dt th{ background:#f8fafc; padding:9px 12px; text-align:left; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:1; white-space:nowrap; }
-table.dt td{ padding:9px 12px; border-bottom:1px solid #f8fafc; }
+table.dt th{ background:#f8fafc; padding:9px 12px; text-align:left; font-size:11px; font-weight:700; color:var(--mute); text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; white-space:nowrap; }
+table.dt td{ padding:9px 12px; border-bottom:1px solid var(--line-soft); }
 table.dt tr:last-child td{ border-bottom:none; }
-table.dt tr:hover td{ background:#f8fafc; }
+table.dt tbody tr:hover td{ background:var(--pri-ll); }
 .num{ text-align:right; font-variant-numeric:tabular-nums; }
 
 .bar-wrap{ display:flex; align-items:center; gap:6px; min-width:90px; }
-.bar-bg{ flex:1; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden; }
+.bar-bg{ flex:1; height:6px; background:var(--line-soft); border-radius:3px; overflow:hidden; }
 .bar-fill{ height:100%; border-radius:3px; }
-.bar-high{ background:#ef4444; }
-.bar-med{ background:#f97316; }
-.bar-low{ background:#10b981; }
+.bar-high{ background:#ef4444; } .bar-med{ background:#f97316; } .bar-low{ background:#10b981; }
 .pct-txt{ font-size:12px; font-weight:700; min-width:38px; text-align:right; }
-.pct-high{ color:#dc2626; }
-.pct-med{ color:#d97706; }
-.pct-low{ color:#16a34a; }
+.pct-high{ color:var(--bad); } .pct-med{ color:var(--warn); } .pct-low{ color:var(--ok); }
 
-.tab-bar{ display:flex; border-bottom:2px solid #e2e8f0; padding:0 18px; gap:2px; }
-.tab{ padding:9px 14px; font-size:12px; font-weight:600; color:#64748b; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; white-space:nowrap; }
-.tab.on{ color:#1a2e4a; border-bottom-color:#1a2e4a; background:#f8fafc; }
-.tab:hover:not(.on){ color:#334155; }
+.tab-bar{ display:flex; border-bottom:2px solid var(--line); padding:0 18px; gap:2px; flex-wrap:wrap; }
+.tab{ padding:9px 14px; font-size:12px; font-weight:600; color:var(--mute); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; font-family:inherit; }
+.tab.on{ color:var(--pri-d); border-bottom-color:var(--pri); background:var(--pri-ll); }
+.tab:hover:not(.on){ color:var(--ink); }
 
 .s-disc{ background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
-.s-none{ background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+.s-none{ background:#fee2e2; color:var(--bad); padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
 .s-exp{ background:#1e293b; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
-.exp-crit{ color:#dc2626; font-weight:700; }
-.exp-warn{ color:#d97706; font-weight:600; }
-.exp-ok{ color:#16a34a; }
-
-.st-pill{ background:#eff6ff; color:#2563eb; padding:2px 7px; border-radius:10px; font-size:11px; font-weight:600; }
+.exp-crit{ color:var(--bad); font-weight:700; }
+.exp-warn{ color:var(--warn); font-weight:600; }
+.exp-ok{ color:var(--ok); }
+.st-pill{ background:var(--pri-l); color:var(--pri-d); padding:2px 7px; border-radius:10px; font-size:11px; font-weight:600; }
 
 .sk{ background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%); background-size:200% 100%; animation:sh 1.4s infinite; border-radius:4px; }
 @keyframes sh{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-.spin-wrap{ text-align:center; padding:28px; color:#94a3b8; font-size:13px; }
-.spin{ display:inline-block; width:18px; height:18px; border:2px solid #e2e8f0; border-top-color:#1a2e4a; border-radius:50%; animation:rot .8s linear infinite; vertical-align:middle; margin-right:7px; }
+.spin-wrap{ text-align:center; padding:28px; color:var(--faint); font-size:13px; }
+.spin{ display:inline-block; width:18px; height:18px; border:2px solid var(--line); border-top-color:var(--pri); border-radius:50%; animation:rot .8s linear infinite; vertical-align:middle; margin-right:7px; }
 @keyframes rot{ to{ transform:rotate(360deg) } }
+
+.seg{ display:inline-flex; background:#f1f5f9; border-radius:8px; padding:3px; gap:2px; }
+.seg button{ border:none; background:none; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--mute); padding:5px 14px; border-radius:6px; cursor:pointer; }
+.seg button.on{ background:#fff; color:var(--pri-d); box-shadow:0 1px 2px rgba(30,60,90,.12); }
+
+.tp-wrap{ max-height:calc(100vh - 300px); overflow:auto; }
+table.tp{ border-collapse:separate; border-spacing:0; font-size:12.5px; width:100%; }
+table.tp th{ background:#f8fafc; padding:8px 11px; text-align:left; font-size:10.5px; font-weight:700; color:var(--mute); text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:3; white-space:nowrap; }
+table.tp td{ padding:7px 11px; border-bottom:1px solid var(--line-soft); white-space:nowrap; }
+table.tp tbody tr:hover td{ background:var(--pri-ll); }
+table.tp th.f, table.tp td.f{ position:sticky; background:#fff; z-index:2; }
+table.tp th.f{ background:#f8fafc; z-index:4; }
+table.tp tbody tr:hover td.f{ background:var(--pri-ll); }
+.f0{ left:0; } .f1{ left:210px; } .f2{ left:390px; } .f3{ left:530px; } .f4{ left:670px; }
+table.tp td.f4, table.tp th.f4{ border-right:2px solid var(--line); }
+.tp-cell{ text-align:right; font-variant-numeric:tabular-nums; }
+.tp-empty{ color:#cbd5e1; text-align:center; }
+.tp-intraday{ background:#fff7ed !important; }
+.tp-arrow{ color:var(--faint); margin:0 3px; }
+.tp-old{ color:var(--faint); text-decoration:line-through; }
+.tp-new{ color:#c2410c; font-weight:700; }
+.tp-dod{ box-shadow:inset 3px 0 0 var(--pri); font-weight:700; color:var(--pri-dd); }
+.tp-sku{ font-weight:600; max-width:290px; overflow:hidden; text-overflow:ellipsis; }
+.tp-meta{ color:var(--mute); font-size:11.5px; }
+.legend{ display:flex; gap:18px; flex-wrap:wrap; padding:10px 18px; border-top:1px solid var(--line-soft); font-size:11.5px; color:var(--mute); }
+.legend span{ display:inline-flex; align-items:center; gap:6px; }
+.sw{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+.empty{ text-align:center; padding:40px 20px; color:var(--faint); font-size:13px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Bazaar Operations</div>
-    <h1>Discounting Review Dashboard</h1>
-    <div class="sub">Basket &amp; item discounts · Expiry linkage · Live from Trino</div>
-  </div>
-  <div class="header-right">
-    <div id="lastUp">—</div>
-    <div>Auto-refresh in <span class="countdown" id="countdown">30:00</span></div>
-  </div>
-</div>
-
-<div class="controls">
-  <span class="ctrl-label">Date Range</span>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <input type="date" id="sd">
-    <span style="color:#94a3b8;font-size:13px;">→</span>
-    <input type="date" id="ed">
-  </div>
-  <span class="range-hint">Max 90 days</span>
-
-  <div style="width:1px;height:22px;background:#e2e8f0;"></div>
-
-  <span class="ctrl-label">Store Type</span>
-  <div class="ms-wrap" id="msWrap">
-    <div class="ms-btn" id="msBtn" onclick="toggleMsDropdown()">
-      <span id="msBtnLabel">All Store Types</span>
-      <span class="ms-arrow">▼</span>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">ب</div>
+      <div class="name">Bazaar Discounting</div>
+      <div class="who">Operations</div>
     </div>
-    <div class="ms-dropdown" id="msDropdown">
-      <div class="ms-top">
-        <button onclick="msSelectAll()">Select All</button>
-        <button onclick="msClearAll()">Clear All</button>
+    <nav class="nav">
+      <div class="nav-lbl">Discount Review</div>
+      <div class="nav-item on" data-view="overview"  onclick="go(this)"><span class="ic">◧</span> Overview</div>
+      <div class="nav-item"    data-view="breakdown" onclick="go(this)"><span class="ic">▦</span> Breakdown</div>
+      <div class="nav-item"    data-view="orders"    onclick="go(this)"><span class="ic">☰</span> Orders</div>
+      <div class="nav-item"    data-view="expiry"    onclick="go(this)"><span class="ic">◔</span> Expiry</div>
+      <div class="nav-lbl">Trade Plan</div>
+      <div class="nav-item"    data-view="tradeplan" onclick="go(this)"><span class="ic">◈</span> Plan History</div>
+    </nav>
+    <div class="side-foot">
+      <div class="u" id="userName">Bazaar Ops</div>
+      <div class="r">Read only</div>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="topbar">
+      <div>
+        <h1 id="viewTitle">Overview</h1>
+        <div class="sub" id="viewSub">Basket &amp; item discounts · live from Trino</div>
       </div>
-      <div id="msItems"></div>
-    </div>
-  </div>
-
-  <button class="btn btn-primary" id="refBtn" onclick="loadAll()">↻ Refresh</button>
-  <div class="err-banner" id="errBanner"></div>
-  <div id="statusMsg" style="font-size:12px;color:#64748b;"></div>
-</div>
-
-<div class="main">
-
-  <div class="kpi-row" id="kpiRow">
-    <div class="kpi"><div class="lbl">Total Discount</div><div class="val sk" style="height:28px;width:110px;margin-bottom:6px;"></div></div>
-    <div class="kpi"><div class="lbl">Basket Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
-    <div class="kpi"><div class="lbl">Item Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
-    <div class="kpi"><div class="lbl">Discount % of GMV</div><div class="val sk" style="height:28px;width:70px;margin-bottom:6px;"></div></div>
-    <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val sk" style="height:28px;width:80px;margin-bottom:6px;"></div></div>
-  </div>
-
-  <div class="row2">
-    <div class="card">
-      <div class="card-hdr"><h3>📈 Daily Discount Trend</h3><span class="badge" id="trendBadge">—</span></div>
-      <div class="card-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr"><h3>🏪 By Store Type</h3></div>
-      <div class="card-body"><div class="donut-wrap"><canvas id="storeChart"></canvas></div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr"><h3>🏭 Warehouse Breakdown</h3><span class="badge" id="whBadge">—</span></div>
-    <div class="tbl-wrap">
-      <table class="dt">
-        <thead><tr><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Basket Disc</th><th class="num">Item Disc</th><th class="num">Total Disc</th><th>Disc % GMV</th></tr></thead>
-        <tbody id="whBody"><tr><td colspan="7"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr"><h3>🏷️ Top Discounted SKUs</h3><span class="badge" id="skuBadge">—</span></div>
-    <div class="tbl-wrap">
-      <table class="dt">
-        <thead><tr><th>#</th><th>Item</th><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Qty</th><th class="num">Discount</th><th>Disc %</th></tr></thead>
-        <tbody id="skuBody"><tr><td colspan="8"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── Order Level View ─────────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-hdr" style="flex-wrap:wrap;gap:10px;">
-      <h3>📋 Order Level View</h3>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;">From</span>
-          <input type="date" id="ord_sd" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;color:#1e293b;background:#f8fafc;">
-          <span style="color:#94a3b8;font-size:12px;">→</span>
-          <input type="date" id="ord_ed" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;color:#1e293b;background:#f8fafc;">
-        </div>
-        <button class="btn btn-primary" style="padding:5px 14px;font-size:12px;" onclick="loadOrders(true)">↻ Load</button>
-        <button class="btn" style="padding:5px 14px;font-size:12px;background:#f1f5f9;color:#1e293b;border:1px solid #e2e8f0;" onclick="exportOrderCSV()">⬇ CSV</button>
-        <span class="badge" id="orderBadge">—</span>
-        <span style="font-size:11px;color:#94a3b8;" id="ordErrMsg"></span>
+      <div class="topbar-right">
+        <div id="lastUp">—</div>
+        <div>Auto-refresh in <span class="countdown" id="countdown">30:00</span></div>
       </div>
     </div>
-    <div class="tbl-wrap" style="max-height:420px;">
-      <table class="dt">
-        <thead>
-          <tr>
-            <th>Order #</th><th>Date</th><th>Warehouse</th><th>Store Type</th>
-            <th class="num">Basket Disc</th><th class="num">Item Disc</th>
-            <th class="num">Total Disc</th><th class="num">GMV</th><th>Disc %</th>
-          </tr>
-        </thead>
-        <tbody id="orderBody">
-          <tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;font-size:13px;">Set a date range and click Load ↻</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="padding:10px 18px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;">
-      <button class="btn" id="ordLoadMoreBtn" style="padding:5px 16px;font-size:12px;background:#f1f5f9;color:#1e293b;border:1px solid #e2e8f0;display:none;" onclick="loadOrders(false)">Load More (200)</button>
-      <span id="ordCountMsg" style="font-size:12px;color:#94a3b8;"></span>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-hdr">
-      <h3>⚠️ Near-Expiry Inventory (live snapshot)</h3>
+    <div class="controls" id="globalControls">
+      <span class="ctrl-label">Date Range</span>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:11px;color:#94a3b8;" id="expSnapshotDate"></span>
-        <span class="badge" id="expBadge">—</span>
+        <input type="date" id="sd">
+        <span style="color:var(--faint);font-size:13px;">→</span>
+        <input type="date" id="ed">
       </div>
+      <span class="range-hint">Max 90 days</span>
+      <div style="width:1px;height:22px;background:var(--line);"></div>
+      <span class="ctrl-label">Store Type</span>
+      <div class="ms-wrap" id="msWrap">
+        <div class="ms-btn" id="msBtn" onclick="toggleMsDropdown()">
+          <span id="msBtnLabel">All Store Types</span>
+          <span class="ms-arrow">▼</span>
+        </div>
+        <div class="ms-dropdown" id="msDropdown">
+          <div class="ms-top">
+            <button onclick="msSelectAll()">Select All</button>
+            <button onclick="msClearAll()">Clear All</button>
+          </div>
+          <div id="msItems"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="refBtn" onclick="loadAll()">↻ Refresh</button>
+      <div class="err-banner" id="errBanner"></div>
+      <div id="statusMsg" style="font-size:12px;color:var(--mute);"></div>
     </div>
-    <div class="tab-bar" id="tabBar">
-      <button class="tab on" data-b="ALL" onclick="switchTab(this)">All</button>
-      <button class="tab" data-b="EXPIRED" onclick="switchTab(this)">🔴 Expired</button>
-      <button class="tab" data-b="0-30 days" onclick="switchTab(this)">🟠 0–30 Days</button>
-      <button class="tab" data-b="31-60 days" onclick="switchTab(this)">🟡 31–60 Days</button>
-      <button class="tab" data-b="61-90 days" onclick="switchTab(this)">🟢 61–90 Days</button>
+
+    <div class="controls" id="tpControls" style="display:none;">
+      <span class="ctrl-label">Plan Dates</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="date" id="tp_sd">
+        <span style="color:var(--faint);font-size:13px;">→</span>
+        <input type="date" id="tp_ed">
+      </div>
+      <div style="width:1px;height:22px;background:var(--line);"></div>
+      <span class="ctrl-label">City</span>
+      <select id="tp_city" onchange="renderTradePlan()"><option value="">All cities</option></select>
+      <span class="ctrl-label">SKU</span>
+      <input type="text" id="tp_search" placeholder="Search SKU or brand…" style="min-width:200px;" oninput="renderTradePlan()">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--mute);cursor:pointer;">
+        <input type="checkbox" id="tp_changed" style="accent-color:var(--pri);width:14px;height:14px;" onchange="renderTradePlan()">
+        Changes only
+      </label>
+      <button class="btn btn-primary" id="tpBtn" onclick="loadTradePlan()">↻ Load</button>
+      <button class="btn btn-ghost" onclick="exportTradePlanCSV()">⬇ CSV</button>
+      <div class="err-banner" id="tpErr"></div>
     </div>
-    <div class="tbl-wrap">
-      <table class="dt">
-        <thead>
-          <tr>
-            <th>Item</th><th>Warehouse</th><th class="num">Days Left</th><th>Expiry Date</th>
-            <th class="num">Stock on Hand</th><th class="num">Inventory Value</th>
-            <th class="num">Sold (Period)</th><th class="num">Discount Given</th><th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="expBody"><tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
-      </table>
+
+    <div class="main">
+
+      <div class="view on" id="view-overview">
+        <div class="kpi-row" id="kpiRow">
+          <div class="kpi"><div class="lbl">Total Discount</div><div class="val sk" style="height:28px;width:110px;margin-bottom:6px;"></div></div>
+          <div class="kpi"><div class="lbl">Basket Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
+          <div class="kpi"><div class="lbl">Item Discount</div><div class="val sk" style="height:28px;width:90px;margin-bottom:6px;"></div></div>
+          <div class="kpi"><div class="lbl">Discount % of GMV</div><div class="val sk" style="height:28px;width:70px;margin-bottom:6px;"></div></div>
+          <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val sk" style="height:28px;width:80px;margin-bottom:6px;"></div></div>
+        </div>
+        <div class="row2">
+          <div class="card">
+            <div class="card-hdr"><h3>Daily Discount Trend</h3><span class="badge" id="trendBadge">—</span></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><h3>By Store Type</h3></div>
+            <div class="card-body"><div class="donut-wrap"><canvas id="storeChart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-breakdown">
+        <div class="card">
+          <div class="card-hdr"><h3>Warehouse Breakdown</h3><span class="badge" id="whBadge">—</span></div>
+          <div class="tbl-wrap">
+            <table class="dt">
+              <thead><tr><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Basket Disc</th><th class="num">Item Disc</th><th class="num">Total Disc</th><th>Disc % GMV</th></tr></thead>
+              <tbody id="whBody"><tr><td colspan="7"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><h3>Top Discounted SKUs</h3><span class="badge" id="skuBadge">—</span></div>
+          <div class="tbl-wrap">
+            <table class="dt">
+              <thead><tr><th>#</th><th>Item</th><th>Warehouse</th><th>Store Type</th><th class="num">Orders</th><th class="num">Qty</th><th class="num">Discount</th><th>Disc %</th></tr></thead>
+              <tbody id="skuBody"><tr><td colspan="8"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-orders">
+        <div class="card">
+          <div class="card-hdr">
+            <h3>Order Level View</h3>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto;">
+              <span class="ctrl-label">From</span>
+              <input type="date" id="ord_sd" style="padding:4px 8px;font-size:12px;">
+              <span style="color:var(--faint);font-size:12px;">→</span>
+              <input type="date" id="ord_ed" style="padding:4px 8px;font-size:12px;">
+              <button class="btn btn-primary" style="padding:5px 14px;font-size:12px;" onclick="loadOrders(true)">↻ Load</button>
+              <button class="btn btn-ghost" style="padding:5px 14px;font-size:12px;" onclick="exportOrderCSV()">⬇ CSV</button>
+              <span class="badge" id="orderBadge">—</span>
+              <span style="font-size:11px;color:var(--faint);" id="ordErrMsg"></span>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="max-height:calc(100vh - 330px);">
+            <table class="dt">
+              <thead><tr>
+                <th>Order #</th><th>Date</th><th>Warehouse</th><th>Store Type</th>
+                <th class="num">Basket Disc</th><th class="num">Item Disc</th>
+                <th class="num">Total Disc</th><th class="num">GMV</th><th>Disc %</th>
+              </tr></thead>
+              <tbody id="orderBody"><tr><td colspan="9" class="empty">Set a date range and click Load ↻</td></tr></tbody>
+            </table>
+          </div>
+          <div style="padding:10px 18px;border-top:1px solid var(--line-soft);display:flex;align-items:center;gap:12px;">
+            <button class="btn btn-ghost" id="ordLoadMoreBtn" style="padding:5px 16px;font-size:12px;display:none;" onclick="loadOrders(false)">Load More (200)</button>
+            <span id="ordCountMsg" style="font-size:12px;color:var(--faint);"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-expiry">
+        <div class="card">
+          <div class="card-hdr">
+            <h3>Near-Expiry Inventory <span style="font-weight:500;color:var(--faint);font-size:12px;">live snapshot</span></h3>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--faint);" id="expSnapshotDate"></span>
+              <span class="badge" id="expBadge">—</span>
+            </div>
+          </div>
+          <div class="tab-bar" id="tabBar">
+            <button class="tab on" data-b="ALL" onclick="switchTab(this)">All</button>
+            <button class="tab" data-b="EXPIRED" onclick="switchTab(this)">Expired</button>
+            <button class="tab" data-b="0-30 days" onclick="switchTab(this)">0–30 Days</button>
+            <button class="tab" data-b="31-60 days" onclick="switchTab(this)">31–60 Days</button>
+            <button class="tab" data-b="61-90 days" onclick="switchTab(this)">61–90 Days</button>
+          </div>
+          <div class="tbl-wrap" style="max-height:calc(100vh - 360px);">
+            <table class="dt">
+              <thead><tr>
+                <th>Item</th><th>Warehouse</th><th class="num">Days Left</th><th>Expiry Date</th>
+                <th class="num">Stock on Hand</th><th class="num">Inventory Value</th>
+                <th class="num">Sold (Period)</th><th class="num">Discount Given</th><th>Status</th>
+              </tr></thead>
+              <tbody id="expBody"><tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-tradeplan">
+        <div class="card">
+          <div class="card-hdr">
+            <h3>Trade Plan History</h3>
+            <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
+              <div class="seg" id="tpSeg">
+                <button class="on" data-m="moq"  onclick="setMetric(this)">MOQ</button>
+                <button          data-m="rate" onclick="setMetric(this)">Rate</button>
+                <button          data-m="mix"  onclick="setMetric(this)">MIX</button>
+              </div>
+              <span class="badge" id="tpBadge">—</span>
+            </div>
+          </div>
+          <div class="tp-wrap" id="tpWrap"><div class="empty">Pick a date range and click Load ↻</div></div>
+          <div class="legend">
+            <span><i class="sw" style="background:#fff7ed;border:1px solid #fed7aa;"></i> changed during the day</span>
+            <span><i class="sw" style="background:linear-gradient(90deg,var(--pri) 0 3px,#fff 3px);border:1px solid var(--line);"></i> changed from the day before</span>
+            <span><i class="sw" style="background:#fff;border:1px solid var(--line);"></i> unchanged</span>
+            <span style="color:#cbd5e1;">·&nbsp; not in the plan that day</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-
 </div>
 
 <script>
-// ─── Store type filter ───────────────────────────────────────────────────
+const VIEW_META = {
+  overview : ['Overview',           'Basket &amp; item discounts · live from Trino'],
+  breakdown: ['Breakdown',          'Discount by warehouse and SKU'],
+  orders   : ['Orders',             'Order level discount detail'],
+  expiry   : ['Expiry',             'Near-expiry inventory and discount linkage'],
+  tradeplan: ['Trade Plan History', 'MOQ, rate and MIX changes over time'],
+};
+function go(el){
+  const v = el.dataset.view;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('on', n===el));
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='view-'+v));
+  const meta = VIEW_META[v];
+  document.getElementById('viewTitle').textContent = meta[0];
+  document.getElementById('viewSub').innerHTML = meta[1];
+  const isTP = v==='tradeplan';
+  document.getElementById('globalControls').style.display = isTP ? 'none' : 'flex';
+  document.getElementById('tpControls').style.display     = isTP ? 'flex' : 'none';
+  if(isTP && !tpRows.length) loadTradePlan();
+}
+
 const STORE_TYPES = [
   {v:'BUYER',label:'Buyer',cnt:19726},
   {v:'SELF_SERVICE_STORE_PRIME',label:'Self-Service Prime',cnt:16031},
@@ -283,7 +408,6 @@ const STORE_TYPES = [
   {v:'CONFECTIONARY',label:'Confectionary',cnt:10},
   {v:'INDUSTRIAL',label:'Industrial',cnt:8},
 ];
-
 (function buildMsItems(){
   document.getElementById('msItems').innerHTML = STORE_TYPES.map(st=>`
     <div class="ms-item">
@@ -292,7 +416,6 @@ const STORE_TYPES = [
       <span class="ms-cnt">${st.cnt.toLocaleString()}</span>
     </div>`).join('');
 })();
-
 function toggleMsDropdown(){
   document.getElementById('msBtn').classList.toggle('open');
   document.getElementById('msDropdown').classList.toggle('open');
@@ -307,8 +430,7 @@ function msSelectAll(){ document.querySelectorAll('.st-cb').forEach(cb=>cb.check
 function msClearAll(){ document.querySelectorAll('.st-cb').forEach(cb=>cb.checked=false); updateMsLabel(); }
 function updateMsLabel(){
   const checked=[...document.querySelectorAll('.st-cb:checked')];
-  const lbl=document.getElementById('msBtnLabel');
-  const btn=document.getElementById('msBtn');
+  const lbl=document.getElementById('msBtnLabel'), btn=document.getElementById('msBtn');
   const ex=btn.querySelector('.ms-count'); if(ex) ex.remove();
   if(checked.length===0){ lbl.textContent='All Store Types'; }
   else {
@@ -323,12 +445,12 @@ function stWhere(col){
   return checked.length>0?`AND ${col} IN (${checked.join(',')})`: '';
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────
 let tCI=null, sCI=null, allExp=[], curBucket='ALL';
 const N=n=>n==null?'—':Math.abs(n)>=1e6?(n/1e6).toFixed(1)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':Math.round(n).toLocaleString();
 const P=n=>n==null?'—':n.toFixed(1)+'%';
 const sd=()=>document.getElementById('sd').value;
 const ed=()=>document.getElementById('ed').value;
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function validateRange(){
   const s=new Date(sd()),e=new Date(ed()),days=(e-s)/(864e5);
@@ -340,38 +462,26 @@ function showErr(m){const b=document.getElementById('errBanner');b.textContent=m
 function hideErr(){document.getElementById('errBanner').style.display='none';}
 function setStatus(m){document.getElementById('statusMsg').textContent=m;}
 
-// ─── Query via Vercel API route ───────────────────────────────────────────
 async function q(sql){
   const res=await fetch('/api/query',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({query:sql})
   });
-  if(!res.ok){
-    const txt=await res.text();
-    throw new Error(txt||`HTTP ${res.status}`);
-  }
+  if(!res.ok){ throw new Error(await res.text() || `HTTP ${res.status}`); }
   return await res.json();
 }
 
-// ─── Auto-refresh countdown (30 min) ─────────────────────────────────────
-const REFRESH_SECS = 30 * 60;
-let secsLeft = REFRESH_SECS;
-let autoTimer = null;
-
+const REFRESH_SECS=30*60; let secsLeft=REFRESH_SECS, autoTimer=null;
 function startCountdown(){
-  clearInterval(autoTimer);
-  secsLeft = REFRESH_SECS;
-  autoTimer = setInterval(()=>{
+  clearInterval(autoTimer); secsLeft=REFRESH_SECS;
+  autoTimer=setInterval(()=>{
     secsLeft--;
-    const m=String(Math.floor(secsLeft/60)).padStart(2,'0');
-    const s=String(secsLeft%60).padStart(2,'0');
+    const m=String(Math.floor(secsLeft/60)).padStart(2,'0'), s=String(secsLeft%60).padStart(2,'0');
     document.getElementById('countdown').textContent=`${m}:${s}`;
     if(secsLeft<=0){ loadAll(); }
   },1000);
 }
 
-// ─── Data loaders ─────────────────────────────────────────────────────────
 async function loadTrend(){
   const rows=await q(`
     SELECT CAST(order_date AS VARCHAR) AS d,
@@ -388,39 +498,33 @@ async function loadTrend(){
       ${stWhere('store_type_order')}
     GROUP BY 1 ORDER BY 1
   `);
-  const tBd=rows.reduce((s,r)=>s+(r.bd||0),0);
-  const tId=rows.reduce((s,r)=>s+(r.id||0),0);
-  const tTd=rows.reduce((s,r)=>s+(r.td||0),0);
-  const tGmv=rows.reduce((s,r)=>s+(r.gmv||0),0);
-  const tOrd=rows.reduce((s,r)=>s+(r.orders||0),0);
-  const tDO=rows.reduce((s,r)=>s+(r.disc_orders||0),0);
+  const tBd=rows.reduce((s,r)=>s+(r.bd||0),0), tId=rows.reduce((s,r)=>s+(r.id||0),0);
+  const tTd=rows.reduce((s,r)=>s+(r.td||0),0), tGmv=rows.reduce((s,r)=>s+(r.gmv||0),0);
+  const tOrd=rows.reduce((s,r)=>s+(r.orders||0),0), tDO=rows.reduce((s,r)=>s+(r.disc_orders||0),0);
   const dPct=tGmv>0?tTd/tGmv*100:0;
   document.getElementById('kpiRow').innerHTML=`
     <div class="kpi"><div class="lbl">Total Discount</div><div class="val">PKR ${N(tTd)}</div><div class="sub">PKR ${Math.round(tTd).toLocaleString()}</div></div>
     <div class="kpi"><div class="lbl">Basket Discount</div><div class="val">PKR ${N(tBd)}</div><div class="sub">${P(tGmv>0?tBd/tGmv*100:0)} of GMV</div></div>
     <div class="kpi"><div class="lbl">Item Discount</div><div class="val">PKR ${N(tId)}</div><div class="sub">${P(tGmv>0?tId/tGmv*100:0)} of GMV</div></div>
     <div class="kpi ${dPct>=5?'alert':''}"><div class="lbl">Discount % of GMV</div><div class="val">${P(dPct)}</div><div class="sub">GMV: PKR ${N(tGmv)}</div></div>
-    <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val">${tDO.toLocaleString()}</div><div class="sub">of ${tOrd.toLocaleString()} · ${P(tOrd>0?tDO/tOrd*100:0)}</div></div>
-  `;
+    <div class="kpi"><div class="lbl">Discounted Orders</div><div class="val">${tDO.toLocaleString()}</div><div class="sub">of ${tOrd.toLocaleString()} · ${P(tOrd>0?tDO/tOrd*100:0)}</div></div>`;
   document.getElementById('trendBadge').textContent=rows.length+' days';
   const ctx=document.getElementById('trendChart').getContext('2d');
   if(tCI) tCI.destroy();
   tCI=new Chart(ctx,{type:'line',data:{
     labels:rows.map(r=>r.d?r.d.substring(5,10):''),
     datasets:[
-      {label:'Total Discount',data:rows.map(r=>Math.round(r.td||0)),borderColor:'#1a2e4a',backgroundColor:'rgba(26,46,74,.08)',fill:true,tension:.35,pointRadius:3,borderWidth:2.5,yAxisID:'y'},
+      {label:'Total Discount',data:rows.map(r=>Math.round(r.td||0)),borderColor:'#1F5375',backgroundColor:'rgba(73,151,208,.12)',fill:true,tension:.35,pointRadius:3,borderWidth:2.5,yAxisID:'y'},
       {label:'Item Discount',data:rows.map(r=>Math.round(r.id||0)),borderColor:'#f97316',fill:false,tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y'},
       {label:'Basket Discount',data:rows.map(r=>Math.round(r.bd||0)),borderColor:'#10b981',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[5,3],yAxisID:'y'},
       {label:'Discounted Orders',data:rows.map(r=>r.disc_orders||0),borderColor:'#a855f7',fill:false,tension:.35,pointRadius:3,borderWidth:2,borderDash:[4,2],yAxisID:'y1'}
-    ]
-  },options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}},tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` ${c.dataset.label}: ${c.raw.toLocaleString()} orders`:` ${c.dataset.label}: PKR ${c.raw.toLocaleString()}`}}},
     scales:{
       y:{position:'left',ticks:{callback:v=>'PKR '+(v>=1e6?(v/1e6).toFixed(1)+'M':(v>=1e3?(v/1e3).toFixed(0)+'K':v)),font:{size:10}},grid:{color:'#f1f5f9'}},
       y1:{position:'right',ticks:{callback:v=>v>=1e3?(v/1e3).toFixed(1)+'K':v,font:{size:10},color:'#a855f7'},grid:{drawOnChartArea:false}},
       x:{ticks:{font:{size:10}},grid:{display:false}}
-    }
-  }});
+    }}});
 }
 
 async function loadStore(){
@@ -434,15 +538,14 @@ async function loadStore(){
     GROUP BY 1 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0
     ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 10
   `);
-  const pal=['#1a2e4a','#f97316','#10b981','#3b82f6','#a855f7','#ef4444','#f59e0b','#06b6d4','#64748b','#84cc16'];
+  const pal=['#1F5375','#4997D0','#f97316','#10b981','#a855f7','#ef4444','#f59e0b','#06b6d4','#64748b','#84cc16'];
   const ctx=document.getElementById('storeChart').getContext('2d');
   if(sCI) sCI.destroy();
   sCI=new Chart(ctx,{type:'doughnut',data:{
     labels:rows.map(r=>r.st||'Unknown'),
     datasets:[{data:rows.map(r=>Math.round(r.td||0)),backgroundColor:pal,borderWidth:2,borderColor:'#fff'}]
   },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-    plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: PKR ${c.raw.toLocaleString()}`}}}
-  }});
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:6,boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: PKR ${c.raw.toLocaleString()}`}}}}});
 }
 
 async function loadWH(){
@@ -465,11 +568,11 @@ async function loadWH(){
   const mx=Math.max(...rows.map(r=>r.td||0));
   document.getElementById('whBody').innerHTML=rows.length?rows.map(r=>{
     const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low',bw=mx>0?Math.round((r.td||0)/mx*100):0;
-    return `<tr><td><strong>${r.wh||'—'}</strong></td><td><span class="st-pill">${r.st||'—'}</span></td>
+    return `<tr><td><strong>${esc(r.wh)||'—'}</strong></td><td><span class="st-pill">${esc(r.st)||'—'}</span></td>
       <td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">PKR ${N(r.bd)}</td>
       <td class="num">PKR ${N(r.id)}</td><td class="num" style="font-weight:700;">PKR ${N(r.td)}</td>
       <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${bw}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;
-  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:28px;color:#94a3b8;">No data for selection</td></tr>';
+  }).join(''):'<tr><td colspan="7" class="empty">No data for selection</td></tr>';
 }
 
 async function loadSKUs(){
@@ -487,19 +590,17 @@ async function loadSKUs(){
   document.getElementById('skuBadge').textContent='Top '+rows.length;
   document.getElementById('skuBody').innerHTML=rows.length?rows.map((r,i)=>{
     const p=r.dp||0,cls=p>=20?'high':p>=10?'med':'low';
-    return `<tr><td style="color:#94a3b8;font-size:11px;font-weight:700;">${i+1}</td>
-      <td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td>
-      <td><span class="st-pill">${r.st||'—'}</span></td>
+    return `<tr><td style="color:var(--faint);font-size:11px;font-weight:700;">${i+1}</td>
+      <td><strong>${esc(r.item_name)||'—'}</strong></td><td>${esc(r.wh)||'—'}</td>
+      <td><span class="st-pill">${esc(r.st)||'—'}</span></td>
       <td class="num">${(r.ord||0).toLocaleString()}</td><td class="num">${(r.qty||0).toLocaleString()}</td>
-      <td class="num" style="font-weight:700;color:#1a2e4a;">PKR ${N(r.id)}</td>
+      <td class="num" style="font-weight:700;color:var(--pri-dd);">PKR ${N(r.id)}</td>
       <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*3,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td></tr>`;
-  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:28px;color:#94a3b8;">No data for selection</td></tr>';
+  }).join(''):'<tr><td colspan="8" class="empty">No data for selection</td></tr>';
 }
 
 async function loadExpiry(){
-  // Split into 2 parallel queries — avoids the slow cross-table JOIN
   const [invRows, ordRows] = await Promise.all([
-    // Query 1: inventory snapshot only (fast — no join)
     q(`SELECT inv.item_name, inv.warehouse AS wh, inv.expiry_date AS exp,
       DATE_DIFF('day', CURRENT_DATE, inv.expiry_date) AS dte,
       SUM(inv.balance_sale) AS bal_sale,
@@ -520,8 +621,6 @@ async function loadExpiry(){
       AND inv.balance_stock > 0
     GROUP BY inv.item_name, inv.warehouse, inv.expiry_date
     ORDER BY dte ASC LIMIT 500`),
-
-    // Query 2: order discounts by item in the selected period (fast — no join)
     q(`SELECT item_name,
       SUM(COALESCE(item_discount, 0)) AS dg,
       SUM(COALESCE(ordered_quantity, 0)) AS qs
@@ -532,23 +631,15 @@ async function loadExpiry(){
       ${stWhere('store_type_order')}
     GROUP BY item_name`)
   ]);
-
-  // Merge on item_name client-side (instant)
-  const ordMap = {};
-  ordRows.forEach(r => { ordMap[r.item_name] = r; });
-  allExp = invRows.map(r => {
-    const ord = ordMap[r.item_name] || {};
-    return { ...r, dg: ord.dg || 0, qs: ord.qs || 0 };
-  });
-
+  const ordMap={}; ordRows.forEach(r=>{ ordMap[r.item_name]=r; });
+  allExp = invRows.map(r=>{ const o=ordMap[r.item_name]||{}; return Object.assign({}, r, {dg:o.dg||0, qs:o.qs||0}); });
   const snapDt=allExp.length&&allExp[0].snap_dt?allExp[0].snap_dt.substring(0,10):'';
   if(snapDt) document.getElementById('expSnapshotDate').textContent='Snapshot: '+snapDt;
   const cnts={ALL:allExp.length,EXPIRED:0,'0-30 days':0,'31-60 days':0,'61-90 days':0};
-  allExp.forEach(r=>{if(cnts[r.bucket]!==undefined) cnts[r.bucket]++;});
+  allExp.forEach(r=>{ if(cnts[r.bucket]!==undefined) cnts[r.bucket]++; });
   document.getElementById('expBadge').textContent=allExp.length+' items';
-  document.querySelectorAll('.tab').forEach(t=>{
-    const b=t.dataset.b;
-    t.textContent=t.textContent.replace(/\s*\(\d+\)$/,'')+` (${cnts[b]||0})`;
+  document.querySelectorAll('#tabBar .tab').forEach(t=>{
+    t.textContent=t.textContent.replace(/\s*\(\d+\)$/,'')+` (${cnts[t.dataset.b]||0})`;
   });
   renderExp(curBucket);
 }
@@ -557,26 +648,24 @@ function renderExp(bucket){
   curBucket=bucket;
   const data=bucket==='ALL'?allExp:allExp.filter(r=>r.bucket===bucket);
   const tbody=document.getElementById('expBody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No items in this category</td></tr>';return;}
+  if(!data.length){ tbody.innerHTML='<tr><td colspan="9" class="empty">No items in this category</td></tr>'; return; }
   tbody.innerHTML=data.map(r=>{
-    const d=r.dte,ec=d<0?'exp-crit':d<=7?'exp-crit':d<=30?'exp-warn':'exp-ok';
+    const d=r.dte, ec=d<0?'exp-crit':d<=7?'exp-crit':d<=30?'exp-warn':'exp-ok';
     const dl=d<0?`${Math.abs(d)}d ago`:`${d}d`;
     const disc=(r.dg||0)>0;
-    const badge=r.bucket==='EXPIRED'?'<span class="s-exp">EXPIRED</span>':disc?'<span class="s-disc">✓ Discounted</span>':'<span class="s-none">⚠ No Discount</span>';
-    const stockLabel=(r.bal_sale!=null&&r.uom)?`${Math.round(r.bal_sale).toLocaleString()} <span style="font-size:10px;color:#94a3b8;">${r.uom}</span>`:(r.bal_sale!=null?Math.round(r.bal_sale).toLocaleString():'—');
+    const badge=r.bucket==='EXPIRED'?'<span class="s-exp">EXPIRED</span>':disc?'<span class="s-disc">Discounted</span>':'<span class="s-none">No Discount</span>';
+    const stockLabel=(r.bal_sale!=null&&r.uom)?`${Math.round(r.bal_sale).toLocaleString()} <span style="font-size:10px;color:var(--faint);">${esc(r.uom)}</span>`:(r.bal_sale!=null?Math.round(r.bal_sale).toLocaleString():'—');
     const invVal=(r.inv_value&&r.inv_value>0)?'PKR '+N(r.inv_value):'—';
-    return `<tr><td><strong>${r.item_name||'—'}</strong></td><td>${r.wh||'—'}</td>
+    return `<tr><td><strong>${esc(r.item_name)||'—'}</strong></td><td>${esc(r.wh)||'—'}</td>
       <td class="num"><span class="${ec}">${dl}</span></td><td>${r.exp?r.exp.substring(0,10):'—'}</td>
       <td class="num">${stockLabel}</td><td class="num" style="font-weight:600;">${invVal}</td>
       <td class="num">${(r.qs||0).toLocaleString()}</td>
       <td class="num" style="font-weight:600;">${disc?'PKR '+N(r.dg):'—'}</td><td>${badge}</td></tr>`;
   }).join('');
 }
-
 function switchTab(btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  btn.classList.add('on');
-  renderExp(btn.dataset.b);
+  document.querySelectorAll('#tabBar .tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on'); renderExp(btn.dataset.b);
 }
 
 async function loadAll(){
@@ -592,38 +681,29 @@ async function loadAll(){
   try {
     await Promise.all([loadTrend(),loadStore(),loadWH(),loadSKUs(),loadExpiry()]);
     document.getElementById('lastUp').textContent='Updated '+new Date().toLocaleTimeString();
-    setStatus('');
-    startCountdown();
-  } catch(e) {
-    showErr('Error loading data: '+e.message);
-    setStatus('');
-  } finally { btn.disabled=false; }
+    setStatus(''); startCountdown();
+  } catch(e) { showErr('Error loading data: '+e.message); setStatus(''); }
+  finally { btn.disabled=false; }
 }
 
-// ─── Order Level View ─────────────────────────────────────────────────────
-const ORD_PAGE_SIZE = 200;
-let ordPage = 0;
-let allOrderRows = [];
-let ordHasMore = false;
-
-const ordSd = () => document.getElementById('ord_sd').value;
-const ordEd = () => document.getElementById('ord_ed').value;
+const ORD_PAGE_SIZE=200; let ordPage=0, allOrderRows=[], ordHasMore=false;
+const ordSd=()=>document.getElementById('ord_sd').value;
+const ordEd=()=>document.getElementById('ord_ed').value;
 
 function validateOrdRange(){
   const s=new Date(ordSd()),e=new Date(ordEd()),days=(e-s)/(864e5);
   if(days<0){document.getElementById('ordErrMsg').textContent='Start must be before end.';return false;}
   if(days>92){document.getElementById('ordErrMsg').textContent='Max range is 3 months.';return false;}
-  document.getElementById('ordErrMsg').textContent='';
-  return true;
+  document.getElementById('ordErrMsg').textContent=''; return true;
 }
 
-async function loadOrders(reset=true){
+async function loadOrders(reset){
+  if(reset===undefined) reset=true;
   if(!validateOrdRange()) return;
   if(reset){ ordPage=0; allOrderRows=[]; }
   const offset=ordPage*ORD_PAGE_SIZE;
   if(reset){
-    document.getElementById('orderBody').innerHTML=
-      '<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';
+    document.getElementById('orderBody').innerHTML='<tr><td colspan="9"><div class="spin-wrap"><span class="spin"></span>Loading…</div></td></tr>';
     document.getElementById('ordLoadMoreBtn').style.display='none';
     document.getElementById('ordCountMsg').textContent='';
   }
@@ -633,8 +713,7 @@ async function loadOrders(reset=true){
       FROM (
         SELECT order_number,
           CAST(order_date AS VARCHAR) AS ord_date,
-          order_warehouse AS wh,
-          store_type_order AS st,
+          order_warehouse AS wh, store_type_order AS st,
           COALESCE(basket_discount,0) AS bd,
           COALESCE(item_discount,0) AS id,
           COALESCE(basket_discount,0)+COALESCE(item_discount,0) AS td,
@@ -652,37 +731,29 @@ async function loadOrders(reset=true){
       ORDER BY rn
     `);
     ordHasMore = rows.length > ORD_PAGE_SIZE;
-    const pageRows = ordHasMore ? rows.slice(0,ORD_PAGE_SIZE) : rows;
-    allOrderRows = [...allOrderRows, ...pageRows];
-    ordPage++;
-    renderOrders();
-    document.getElementById('ordLoadMoreBtn').style.display = ordHasMore ? 'inline-flex' : 'none';
+    allOrderRows = allOrderRows.concat(ordHasMore ? rows.slice(0,ORD_PAGE_SIZE) : rows);
+    ordPage++; renderOrders();
+    document.getElementById('ordLoadMoreBtn').style.display = ordHasMore?'inline-flex':'none';
     document.getElementById('orderBadge').textContent = allOrderRows.length+(ordHasMore?'+':'')+' orders';
     document.getElementById('ordCountMsg').textContent = ordHasMore
       ? `Showing ${allOrderRows.length} orders — more available`
       : `${allOrderRows.length} orders total`;
   } catch(e) {
-    document.getElementById('orderBody').innerHTML=
-      `<tr><td colspan="9" style="text-align:center;padding:28px;color:#b91c1c;">Error: ${e.message}</td></tr>`;
+    document.getElementById('orderBody').innerHTML=`<tr><td colspan="9" class="empty" style="color:#b91c1c;">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
 function renderOrders(){
   const tbody=document.getElementById('orderBody');
-  if(!allOrderRows.length){
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:28px;color:#94a3b8;">No discounted orders found</td></tr>';
-    return;
-  }
+  if(!allOrderRows.length){ tbody.innerHTML='<tr><td colspan="9" class="empty">No discounted orders found</td></tr>'; return; }
   tbody.innerHTML=allOrderRows.map(r=>{
     const p=r.dp||0,cls=p>=15?'high':p>=7?'med':'low';
-    const dt=r.ord_date?r.ord_date.substring(0,10):'—';
     return `<tr>
-      <td style="font-family:monospace;font-size:12px;">${r.order_number||'—'}</td>
-      <td>${dt}</td>
-      <td>${r.wh||'—'}</td>
-      <td><span class="st-pill">${r.st||'—'}</span></td>
-      <td class="num">PKR ${N(r.bd)}</td>
-      <td class="num">PKR ${N(r.id)}</td>
+      <td style="font-family:monospace;font-size:12px;">${esc(r.order_number)||'—'}</td>
+      <td>${r.ord_date?r.ord_date.substring(0,10):'—'}</td>
+      <td>${esc(r.wh)||'—'}</td>
+      <td><span class="st-pill">${esc(r.st)||'—'}</span></td>
+      <td class="num">PKR ${N(r.bd)}</td><td class="num">PKR ${N(r.id)}</td>
       <td class="num" style="font-weight:700;">PKR ${N(r.td)}</td>
       <td class="num">${r.gmv!=null?'PKR '+N(r.gmv):'—'}</td>
       <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill bar-${cls}" style="width:${Math.min(p*4,100)}%"></div></div><span class="pct-txt pct-${cls}">${p.toFixed(1)}%</span></div></td>
@@ -690,30 +761,201 @@ function renderOrders(){
   }).join('');
 }
 
-function exportOrderCSV(){
-  if(!allOrderRows.length){alert('No data loaded yet. Click Load first.');return;}
-  const cols=['order_number','ord_date','wh','st','bd','id','td','gmv','dp'];
-  const hdrs=['Order Number','Date','Warehouse','Store Type','Basket Discount','Item Discount','Total Discount','GMV','Disc %'];
-  const csv=[hdrs.join(','),...allOrderRows.map(r=>cols.map(c=>{
-    const v=r[c]??'';
-    return typeof v==='string'&&v.includes(',')? `"${v}"`:v;
-  }).join(','))].join('\n');
+function downloadCSV(rows, filename){
+  const csv=rows.map(r=>r.map(v=>{
+    const s=String(v==null?'':v);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`discounted_orders_${ordSd()}_to_${ordEd()}.csv`;
-  a.click();
+  a.download=filename; a.click();
+}
+
+function exportOrderCSV(){
+  if(!allOrderRows.length){ alert('No data loaded yet. Click Load first.'); return; }
+  const cols=['order_number','ord_date','wh','st','bd','id','td','gmv','dp'];
+  const hdrs=['Order Number','Date','Warehouse','Store Type','Basket Discount','Item Discount','Total Discount','GMV','Disc %'];
+  downloadCSV([hdrs].concat(allOrderRows.map(r=>cols.map(c=>r[c]==null?'':r[c]))),
+    `discounted_orders_${ordSd()}_to_${ordEd()}.csv`);
+}
+
+let tpRows=[], tpDates=[], tpMetric='moq';
+const tpSd=()=>document.getElementById('tp_sd').value;
+const tpEd=()=>document.getElementById('tp_ed').value;
+
+function setMetric(btn){
+  tpMetric=btn.dataset.m;
+  document.querySelectorAll('#tpSeg button').forEach(b=>b.classList.toggle('on', b===btn));
+  renderTradePlan();
+}
+function tpShowErr(m){ const b=document.getElementById('tpErr'); b.textContent=m; b.style.display='block'; }
+function tpHideErr(){ document.getElementById('tpErr').style.display='none'; }
+
+async function loadTradePlan(){
+  const from=tpSd(), to=tpEd();
+  if(!from||!to){ tpShowErr('Pick both dates.'); return; }
+  const days=(new Date(to)-new Date(from))/864e5;
+  if(days<0){ tpShowErr('Start must be on or before end.'); return; }
+  if(days>90){ tpShowErr('Range cannot exceed 90 days.'); return; }
+  tpHideErr();
+
+  const btn=document.getElementById('tpBtn');
+  btn.disabled=true;
+  document.getElementById('tpWrap').innerHTML='<div class="spin-wrap"><span class="spin"></span>Loading plan history…</div>';
+
+  try{
+    const res=await fetch('/api/tradeplan',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({from:from,to:to})
+    });
+    if(!res.ok){
+      let msg=null;
+      try{ msg=(await res.json()).error; }catch(err){ msg=null; }
+      throw new Error(msg||('HTTP '+res.status));
+    }
+    tpRows=await res.json();
+    tpDates=Array.from(new Set(tpRows.map(r=>String(r.plan_date).substring(0,10)))).sort();
+
+    const sel=document.getElementById('tp_city'), keep=sel.value;
+    const cities=Array.from(new Set(tpRows.map(r=>r.city_raw).filter(Boolean))).sort();
+    sel.innerHTML='<option value="">All cities</option>'+cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(cities.indexOf(keep)>=0) sel.value=keep;
+
+    renderTradePlan();
+  }catch(e){
+    document.getElementById('tpWrap').innerHTML=`<div class="empty" style="color:#b91c1c;">${esc(e.message)}</div>`;
+    document.getElementById('tpBadge').textContent='—';
+  }finally{ btn.disabled=false; }
+}
+
+function tpFmt(v){
+  if(v==null||v==='') return '—';
+  if(typeof v==='number') return v.toLocaleString();
+  const n=Number(v);
+  return Number.isFinite(n) ? n.toLocaleString() : String(v);
+}
+
+function tpGroup(cityF){
+  const map=new Map();
+  for(const r of tpRows){
+    if(cityF && r.city_raw!==cityF) continue;
+    const key=r.city_raw+'||'+r.sku_name;
+    if(!map.has(key)){
+      map.set(key,{ city:r.city_raw, sku:r.sku_name, vendor:r.vendor,
+                    brand:r.parent_brand, cat:r.core_category, days:{} });
+    }
+    map.get(key).days[String(r.plan_date).substring(0,10)]=r;
+  }
+  return Array.from(map.values()).sort((a,b)=>
+    (a.city||'').localeCompare(b.city||'') || (a.sku||'').localeCompare(b.sku||''));
+}
+
+function renderTradePlan(){
+  const wrap=document.getElementById('tpWrap');
+  if(!tpRows.length){ wrap.innerHTML='<div class="empty">Pick a date range and click Load ↻</div>'; return; }
+
+  const cityF  = document.getElementById('tp_city').value;
+  const search = document.getElementById('tp_search').value.trim().toLowerCase();
+  const only   = document.getElementById('tp_changed').checked;
+  const m      = tpMetric;
+
+  let rows=tpGroup(cityF);
+
+  if(search){
+    rows=rows.filter(r=>
+      (r.sku||'').toLowerCase().indexOf(search)>=0 ||
+      (r.brand||'').toLowerCase().indexOf(search)>=0 ||
+      (r.vendor||'').toLowerCase().indexOf(search)>=0 ||
+      (r.cat||'').toLowerCase().indexOf(search)>=0);
+  }
+
+  const changed = function(r){
+    let prev=null, moved=false;
+    for(const d of tpDates){
+      const rec=r.days[d]; if(!rec) continue;
+      const open=rec[m+'_open'], close=rec[m+'_close'];
+      if((rec[m+'_variants']||0)>1 && String(open)!==String(close)) moved=true;
+      if(prev!=null && String(close)!==String(prev)) moved=true;
+      if(close!=null) prev=close;
+    }
+    return moved;
+  };
+
+  if(only) rows=rows.filter(changed);
+
+  document.getElementById('tpBadge').textContent = rows.length+' SKUs · '+tpDates.length+' days';
+
+  if(!rows.length){ wrap.innerHTML='<div class="empty">Nothing matches those filters</div>'; return; }
+
+  const head = '<thead><tr>'+
+      '<th class="f f0">City</th>'+
+      '<th class="f f1">SKU</th>'+
+      '<th class="f f2">Vendor</th>'+
+      '<th class="f f3">Parent Brand</th>'+
+      '<th class="f f4">Core Category</th>'+
+      tpDates.map(d=>`<th style="text-align:right;">${d.substring(8,10)}/${d.substring(5,7)}</th>`).join('')+
+    '</tr></thead>';
+
+  const body = rows.map(r=>{
+    let prev=null;
+    const cells = tpDates.map(d=>{
+      const rec=r.days[d];
+      if(!rec) return '<td class="tp-cell tp-empty">·</td>';
+      const open=rec[m+'_open'], close=rec[m+'_close'], variants=rec[m+'_variants']||0;
+      if(open==null && close==null) return '<td class="tp-cell tp-empty">·</td>';
+      const intraday = variants>1 && String(open)!==String(close);
+      const dod      = prev!=null && String(close)!==String(prev);
+      prev = close!=null ? close : prev;
+      const cls = 'tp-cell' + (intraday?' tp-intraday':'') + (dod&&!intraday?' tp-dod':'');
+      const inner = intraday
+        ? `<span class="tp-old">${tpFmt(open)}</span><span class="tp-arrow">→</span><span class="tp-new">${tpFmt(close)}</span>`
+        : tpFmt(close);
+      return `<td class="${cls}">${inner}</td>`;
+    }).join('');
+
+    return '<tr>'+
+      `<td class="f f0">${esc(r.city)||'—'}</td>`+
+      `<td class="f f1 tp-sku" title="${esc(r.sku)}">${esc(r.sku)||'—'}</td>`+
+      `<td class="f f2 tp-meta">${esc(r.vendor)||'—'}</td>`+
+      `<td class="f f3 tp-meta">${esc(r.brand)||'—'}</td>`+
+      `<td class="f f4 tp-meta">${esc(r.cat)||'—'}</td>`+
+      cells+'</tr>';
+  }).join('');
+
+  wrap.innerHTML='<table class="tp">'+head+'<tbody>'+body+'</tbody></table>';
+}
+
+function exportTradePlanCSV(){
+  if(!tpRows.length){ alert('Load the plan history first.'); return; }
+  const m=tpMetric;
+  const rows=tpGroup(document.getElementById('tp_city').value);
+  const hdrs=['City','SKU Name / Particular','Vendor','Parent Brand','Core Category'].concat(tpDates);
+  const out=[hdrs];
+  for(const r of rows){
+    out.push([r.city,r.sku,r.vendor,r.brand,r.cat].concat(tpDates.map(d=>{
+      const rec=r.days[d]; if(!rec) return '';
+      const open=rec[m+'_open'], close=rec[m+'_close'];
+      const intraday=(rec[m+'_variants']||0)>1 && String(open)!==String(close);
+      return intraday ? (open+' -> '+close) : (close==null?'':close);
+    })));
+  }
+  downloadCSV(out, `tradeplan_${m}_${tpSd()}_to_${tpEd()}.csv`);
 }
 
 window.addEventListener('load',()=>{
-  const today=new Date();
-  const fmt=d=>d.toISOString().split('T')[0];
+  const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
   const start=new Date(today); start.setDate(today.getDate()-29);
   document.getElementById('ed').value=fmt(today);
   document.getElementById('sd').value=fmt(start);
-  // Order view defaults to 7 days
+
   const ordStart=new Date(today); ordStart.setDate(today.getDate()-7);
   document.getElementById('ord_ed').value=fmt(today);
   document.getElementById('ord_sd').value=fmt(ordStart);
+
+  const tpStart=new Date(today); tpStart.setDate(today.getDate()-6);
+  document.getElementById('tp_ed').value=fmt(today);
+  document.getElementById('tp_sd').value=fmt(tpStart);
+
   loadAll();
 });
 </script>
