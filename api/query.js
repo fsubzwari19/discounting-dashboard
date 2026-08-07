@@ -4,29 +4,33 @@
  * Body: { "query": "SELECT ..." }
  * Returns: array of row objects [{ col1: val1, col2: val2 }, ...]
  *
- * All Trino credentials are stored as Vercel environment variables —
- * they are never exposed to the browser.
+ * AUTH: gated. Requires a valid signed session cookie issued by /api/auth
+ * after Google sign-in. See discount_dash.md.
+ *
+ * This route executes arbitrary SQL against Trino production, so the gate is
+ * not optional. If you need to disable it temporarily for local work, do it
+ * behind an explicit env flag rather than by commenting the check out.
  *
  * Required env vars in Vercel:
  *   TRINO_SCHEME   — https
  *   TRINO_HOST     — e.g. highoctane-trino-prod.bazaar-engineering.com
  *   TRINO_PORT     — 443
- *   TRINO_USER     — your Trino username / email
- *   TRINO_PASSWORD — your Trino password / token
+ *   TRINO_USER     — Trino username / email
+ *   TRINO_PASSWORD — Trino password / token
  *   TRINO_HEADERS  — JSON string of extra headers {"P-Access-Token-Id":"...","P-Access-Token":"..."}
- *
- * NOTE: Google OAuth scaffolding (api/_auth.js, api/login.js etc.) is present
- * but not yet enforced. Enable by uncommenting the auth gate below when ready.
+ *   SESSION_SECRET — used to verify the auth cookie
  */
+import { getUser } from './_auth.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // ── Auth gate (disabled — enable when moving to a platform with session support) ──
-  // import { getUser } from './_auth.js';
-  // const user = getUser(req);
-  // if (!user) return res.status(401).json({ error: 'Unauthorized — please sign in' });
+  // ── Auth gate ──────────────────────────────────────────────────────────
+  const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized — please sign in' });
+  }
 
   const { query } = req.body || {};
   if (!query) return res.status(400).json({ error: 'Missing query in request body' });

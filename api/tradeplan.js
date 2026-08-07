@@ -6,9 +6,14 @@
 // nothing else, so this route cannot be turned into a general query endpoint the
 // way /api/query can.
 //
+// AUTH: gated, same signed session cookie as /api/query.
+//
 // Env vars required on Vercel:
 //   SUPABASE_URL          e.g. https://xxxx.supabase.co
 //   SUPABASE_SERVICE_KEY  service role key (server side only, never sent to the browser)
+//   SESSION_SECRET        used to verify the auth cookie
+
+import { getUser } from './_auth.js';
 
 const PAGE = 1000;          // PostgREST default max rows per request
 const MAX_PAGES = 40;       // hard stop, 40k rows
@@ -22,6 +27,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // ── Auth gate ──────────────────────────────────────────────────────────
+  const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized — please sign in' });
   }
 
   const base = process.env.SUPABASE_URL;
