@@ -1,17 +1,9 @@
 {
   "functions": {
-    "api/query.js": {
-      "maxDuration": 30
-    }
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
-      ]
-    }
-  ]
+    "api/query.js":  { "maxDuration": 30 },
+    "api/login.js":  { "maxDuration": 10 },
+    "api/auth.js":   { "maxDuration": 10 },
+    "api/me.js":     { "maxDuration": 10 },
+    "api/logout.js": { "maxDuration": 10 }
+  }
 }

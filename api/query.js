@@ -11,13 +11,23 @@
  *   TRINO_USER     — your email
  *   TRINO_PASSWORD — your password/token
  *   TRINO_HEADERS  — JSON string of extra headers, e.g. {"X-Trino-Catalog":"hive"}
+ *
+ * Auth env vars (Google OAuth):
+ *   GOOGLE_CLIENT_ID
+ *   GOOGLE_CLIENT_SECRET
+ *   SESSION_SECRET
+ *   ALLOWED_DOMAIN
  */
+import { getUser } from './_auth.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // ── Auth gate ─────────────────────────────────────────────────────────────
+  const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized — please sign in' });
+  }
 
+  // Same-origin only — no CORS needed for a first-party dashboard
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -27,16 +37,18 @@ export default async function handler(req, res) {
   const scheme   = process.env.TRINO_SCHEME   || 'https';
   const host     = process.env.TRINO_HOST;
   const port     = process.env.TRINO_PORT     || '443';
-  const user     = process.env.TRINO_USER;
+  const trinoUser     = process.env.TRINO_USER;
   const password = process.env.TRINO_PASSWORD;
   const hdrsEnv  = process.env.TRINO_HEADERS;
 
-  if (!host || !user || !password) {
+  if (!host || !trinoUser || !password) {
     return res.status(500).json({ error: 'Missing Trino environment variables' });
   }
 
-  const basicAuth = Buffer.from(`${user}:${password}`).toString('base64');
+  // Build auth header (Basic Auth: base64(user:password))
+  const basicAuth = Buffer.from(`${trinoUser}:${password}`).toString('base64');
 
+  // Parse any extra headers from TRINO_HEADERS env var
   let extraHeaders = {};
   if (hdrsEnv) {
     try { extraHeaders = JSON.parse(hdrsEnv); } catch (_) {}
@@ -44,7 +56,7 @@ export default async function handler(req, res) {
 
   const baseHeaders = {
     'Authorization': `Basic ${basicAuth}`,
-    'X-Trino-User': user,
+    'X-Trino-User': trinoUser,
     'Content-Type': 'text/plain',
     ...extraHeaders,
   };
@@ -52,6 +64,7 @@ export default async function handler(req, res) {
   const baseUrl = `${scheme}://${host}:${port}`;
 
   try {
+    // 1. Submit the query
     const submitRes = await fetch(`${baseUrl}/v1/statement`, {
       method: 'POST',
       headers: baseHeaders,
@@ -65,28 +78,40 @@ export default async function handler(req, res) {
 
     let state = await submitRes.json();
 
+    // Check for immediate query error
     if (state.error) {
-      return res.status(400).json({ error: `${state.error.errorName}: ${state.error.message}` });
+      return res.status(400).json({
+        error: `${state.error.errorName}: ${state.error.message}`,
+      });
     }
 
     let columns = state.columns || [];
     let allRows = state.data   || [];
 
+    // 2. Paginate through nextUri until complete
     while (state.nextUri) {
-      await new Promise(r => setTimeout(r, 100));
+      await sleep(100); // small back-off to avoid hammering Trino
+
       const nextRes = await fetch(state.nextUri, { headers: baseHeaders });
+
       if (!nextRes.ok) {
         const text = await nextRes.text();
         return res.status(nextRes.status).json({ error: `Trino pagination failed: ${text}` });
       }
+
       state = await nextRes.json();
+
       if (state.error) {
-        return res.status(400).json({ error: `${state.error.errorName}: ${state.error.message}` });
+        return res.status(400).json({
+          error: `${state.error.errorName}: ${state.error.message}`,
+        });
       }
+
       if (state.columns) columns = state.columns;
       if (state.data)    allRows = allRows.concat(state.data);
     }
 
+    // 3. Convert raw arrays → array of objects keyed by column name
     const rows = allRows.map(row =>
       Object.fromEntries(columns.map((col, i) => [col.name, row[i]]))
     );
@@ -97,4 +122,8 @@ export default async function handler(req, res) {
     console.error('Trino proxy error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
