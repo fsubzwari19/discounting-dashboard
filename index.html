@@ -133,17 +133,30 @@ table.tp tbody tr:hover td{ background:var(--pri-ll); }
 table.tp th.f, table.tp td.f{ position:sticky; background:#fff; z-index:2; }
 table.tp th.f{ background:#f8fafc; z-index:4; }
 table.tp tbody tr:hover td.f{ background:var(--pri-ll); }
-.f0{ left:0; } .f1{ left:210px; } .f2{ left:390px; } .f3{ left:530px; } .f4{ left:670px; }
-table.tp td.f4, table.tp th.f4{ border-right:2px solid var(--line); }
-.tp-cell{ text-align:right; font-variant-numeric:tabular-nums; }
+table.tp{ table-layout:fixed; }
+table.tp td.f-last, table.tp th.f-last{ border-right:2px solid var(--line); }
+.tp-cell{ text-align:right; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
 .tp-empty{ color:#cbd5e1; text-align:center; }
-.tp-intraday{ background:#fff7ed !important; }
-.tp-arrow{ color:var(--faint); margin:0 3px; }
-.tp-old{ color:var(--faint); text-decoration:line-through; }
-.tp-new{ color:#c2410c; font-weight:700; }
-.tp-dod{ box-shadow:inset 3px 0 0 var(--pri); font-weight:700; color:var(--pri-dd); }
-.tp-sku{ font-weight:600; max-width:290px; overflow:hidden; text-overflow:ellipsis; }
-.tp-meta{ color:var(--mute); font-size:11.5px; }
+
+/* changed during the day: amber block, outlined */
+.tp-intraday{ background:#FEE9C8 !important; box-shadow:inset 0 0 0 1.5px #F59E0B; }
+table.tp tbody tr:hover td.tp-intraday{ background:#FDDCA8 !important; }
+.tp-arrow{ color:#B45309; margin:0 4px; font-weight:700; }
+.tp-old{ color:#A16207; text-decoration:line-through; opacity:.75; }
+.tp-new{ color:#C2410C; font-weight:800; }
+
+/* changed from the day before: blue block, outlined */
+.tp-dod{ background:#D7E9F8 !important; box-shadow:inset 0 0 0 1.5px var(--pri); color:var(--pri-dd); font-weight:800; }
+table.tp tbody tr:hover td.tp-dod{ background:#C4DFF4 !important; }
+
+.tp-sku{ font-weight:600; overflow:hidden; text-overflow:ellipsis; }
+.tp-meta{ color:var(--mute); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; }
+
+/* drag-to-resize handle */
+.rz{ position:absolute; top:0; right:0; width:7px; height:100%; cursor:col-resize; user-select:none; z-index:5; }
+.rz:hover{ background:var(--pri); opacity:.35; }
+.rz.dragging{ background:var(--pri); opacity:.6; }
+body.resizing{ cursor:col-resize !important; user-select:none; }
 .legend{ display:flex; gap:18px; flex-wrap:wrap; padding:10px 18px; border-top:1px solid var(--line-soft); font-size:11.5px; color:var(--mute); }
 .legend span{ display:inline-flex; align-items:center; gap:6px; }
 .sw{ width:12px; height:12px; border-radius:3px; display:inline-block; }
@@ -355,8 +368,8 @@ table.tp td.f4, table.tp th.f4{ border-right:2px solid var(--line); }
           </div>
           <div class="tp-wrap" id="tpWrap"><div class="empty">Pick a date range and click Load ↻</div></div>
           <div class="legend">
-            <span><i class="sw" style="background:#fff7ed;border:1px solid #fed7aa;"></i> changed during the day</span>
-            <span><i class="sw" style="background:linear-gradient(90deg,var(--pri) 0 3px,#fff 3px);border:1px solid var(--line);"></i> changed from the day before</span>
+            <span><i class="sw" style="background:#FEE9C8;border:1.5px solid #F59E0B;"></i> changed during the day</span>
+            <span><i class="sw" style="background:#D7E9F8;border:1.5px solid var(--pri);"></i> changed from the day before</span>
             <span><i class="sw" style="background:#fff;border:1px solid var(--line);"></i> unchanged</span>
             <span style="color:#cbd5e1;">·&nbsp; not in the plan that day</span>
           </div>
@@ -780,6 +793,9 @@ function exportOrderCSV(){
 }
 
 let tpRows=[], tpDates=[], tpMetric='moq';
+const TP_FIXED_W = [120, 320, 170, 160];   // City, SKU, Parent Brand, Core Category
+const TP_DATE_W  = 96;
+let tpColW = [];                            // widths the user has dragged, by column index
 const tpSd=()=>document.getElementById('tp_sd').value;
 const tpEd=()=>document.getElementById('tp_ed').value;
 
@@ -887,12 +903,14 @@ function renderTradePlan(){
 
   if(!rows.length){ wrap.innerHTML='<div class="empty">Nothing matches those filters</div>'; return; }
 
+  const widths = [...TP_FIXED_W, ...tpDates.map(()=>TP_DATE_W)].map((w,i)=> tpColW[i] || w);
+  const cols = '<colgroup>'+widths.map(w=>`<col style="width:${w}px">`).join('')+'</colgroup>';
+
   const head = '<thead><tr>'+
-      '<th class="f f0">City</th>'+
-      '<th class="f f1">SKU</th>'+
-      '<th class="f f2">Vendor</th>'+
-      '<th class="f f3">Parent Brand</th>'+
-      '<th class="f f4">Core Category</th>'+
+      '<th class="f">City</th>'+
+      '<th class="f">SKU</th>'+
+      '<th class="f">Parent Brand</th>'+
+      '<th class="f f-last">Core Category</th>'+
       tpDates.map(d=>`<th style="text-align:right;">${d.substring(8,10)}/${d.substring(5,7)}</th>`).join('')+
     '</tr></thead>';
 
@@ -914,25 +932,81 @@ function renderTradePlan(){
     }).join('');
 
     return '<tr>'+
-      `<td class="f f0">${esc(r.city)||'—'}</td>`+
-      `<td class="f f1 tp-sku" title="${esc(r.sku)}">${esc(r.sku)||'—'}</td>`+
-      `<td class="f f2 tp-meta">${esc(r.vendor)||'—'}</td>`+
-      `<td class="f f3 tp-meta">${esc(r.brand)||'—'}</td>`+
-      `<td class="f f4 tp-meta">${esc(r.cat)||'—'}</td>`+
+      `<td class="f">${esc(r.city)||'—'}</td>`+
+      `<td class="f tp-sku" title="${esc(r.sku)}">${esc(r.sku)||'—'}</td>`+
+      `<td class="f tp-meta" title="${esc(r.brand)}">${esc(r.brand)||'—'}</td>`+
+      `<td class="f f-last tp-meta" title="${esc(r.cat)}">${esc(r.cat)||'—'}</td>`+
       cells+'</tr>';
   }).join('');
 
-  wrap.innerHTML='<table class="tp">'+head+'<tbody>'+body+'</tbody></table>';
+  wrap.innerHTML='<table class="tp">'+cols+head+'<tbody>'+body+'</tbody></table>';
+  const table = wrap.querySelector('table.tp');
+  attachResizers(table);
+  layoutFrozen();
+}
+
+// Frozen columns can no longer use fixed CSS offsets once widths are draggable,
+// so their left positions are measured and applied after every render and resize.
+function layoutFrozen(){
+  const table = document.querySelector('#tpWrap table.tp');
+  if(!table) return;
+  const headF = [...table.querySelectorAll('thead th.f')];
+  let acc = 0;
+  const lefts = headF.map(th=>{ const l = acc; acc += th.getBoundingClientRect().width; return l; });
+  headF.forEach((th,i)=>{ th.style.left = lefts[i]+'px'; });
+  table.querySelectorAll('tbody tr').forEach(tr=>{
+    [...tr.querySelectorAll('td.f')].forEach((td,i)=>{ td.style.left = lefts[i]+'px'; });
+  });
+}
+
+function attachResizers(table){
+  const cols = [...table.querySelectorAll('colgroup col')];
+  [...table.querySelectorAll('thead th')].forEach((th,i)=>{
+    const rz = document.createElement('div');
+    rz.className = 'rz';
+    th.appendChild(rz);
+
+    rz.addEventListener('mousedown', e=>{
+      e.preventDefault(); e.stopPropagation();
+      const startX = e.pageX;
+      const startW = th.getBoundingClientRect().width;
+      rz.classList.add('dragging');
+      document.body.classList.add('resizing');
+      const move = ev=>{
+        const w = Math.max(56, Math.round(startW + (ev.pageX - startX)));
+        if(cols[i]) cols[i].style.width = w+'px';
+        tpColW[i] = w;
+        layoutFrozen();
+      };
+      const up = ()=>{
+        rz.classList.remove('dragging');
+        document.body.classList.remove('resizing');
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+
+    // double click the handle to reset that column
+    rz.addEventListener('dblclick', e=>{
+      e.preventDefault(); e.stopPropagation();
+      const def = i < TP_FIXED_W.length ? TP_FIXED_W[i] : TP_DATE_W;
+      if(cols[i]) cols[i].style.width = def+'px';
+      tpColW[i] = def;
+      layoutFrozen();
+    });
+  });
 }
 
 function exportTradePlanCSV(){
   if(!tpRows.length){ alert('Load the plan history first.'); return; }
   const m=tpMetric;
   const rows=tpGroup(document.getElementById('tp_city').value);
-  const hdrs=['City','SKU Name / Particular','Vendor','Parent Brand','Core Category'].concat(tpDates);
+  const hdrs=['City','SKU Name / Particular','Parent Brand','Core Category'].concat(tpDates);
   const out=[hdrs];
   for(const r of rows){
-    out.push([r.city,r.sku,r.vendor,r.brand,r.cat].concat(tpDates.map(d=>{
+    out.push([r.city,r.sku,r.brand,r.cat].concat(tpDates.map(d=>{
       const rec=r.days[d]; if(!rec) return '';
       const open=rec[m+'_open'], close=rec[m+'_close'];
       const intraday=(rec[m+'_variants']||0)>1 && String(open)!==String(close);
@@ -941,6 +1015,8 @@ function exportTradePlanCSV(){
   }
   downloadCSV(out, `tradeplan_${m}_${tpSd()}_to_${tpEd()}.csv`);
 }
+
+window.addEventListener('resize', ()=>{ if(curView==='tradeplan') layoutFrozen(); });
 
 window.addEventListener('load',()=>{
   const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
