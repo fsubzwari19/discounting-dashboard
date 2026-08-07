@@ -320,7 +320,7 @@ function updateMsLabel(){
 function stWhere(col){
   col=col||'store_type_order';
   const checked=[...document.querySelectorAll('.st-cb:checked')].map(cb=>`'${cb.value}'`);
-  return checked.length>0?`AND ${col} IN (${checked.join(',')})`:'  ';
+  return checked.length>0?`AND ${col} IN (${checked.join(',')})`: '';
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -710,7 +710,7 @@ window.addEventListener('load',()=>{
   const start=new Date(today); start.setDate(today.getDate()-29);
   document.getElementById('ed').value=fmt(today);
   document.getElementById('sd').value=fmt(start);
-  // Order view defaults to 7 days back from today
+  // Order view defaults to 7 days
   const ordStart=new Date(today); ordStart.setDate(today.getDate()-7);
   document.getElementById('ord_ed').value=fmt(today);
   document.getElementById('ord_sd').value=fmt(ordStart);
