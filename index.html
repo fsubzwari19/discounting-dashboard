@@ -27,8 +27,10 @@ body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; backgr
 .nav-item.on{ background:var(--pri-l); color:var(--pri-d); font-weight:700; }
 .nav-item .ic{ width:17px; text-align:center; font-size:14px; flex-shrink:0; }
 .side-foot{ border-top:1px solid var(--line-soft); padding:14px 18px; }
-.side-foot .u{ font-size:13px; font-weight:700; }
-.side-foot .r{ font-size:11px; color:var(--faint); margin-top:1px; }
+.side-foot .u{ font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.side-foot .r{ font-size:11px; color:var(--faint); margin-top:3px; display:flex; align-items:center; justify-content:space-between; }
+.side-foot .r a{ color:var(--faint); text-decoration:none; font-weight:600; }
+.side-foot .r a:hover{ color:var(--bad); }
 
 .content{ flex:1; margin-left:232px; min-width:0; }
 .topbar{ background:#fff; border-bottom:1px solid var(--line); padding:15px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
@@ -137,22 +139,15 @@ table.tp{ table-layout:fixed; }
 table.tp td.f-last, table.tp th.f-last{ border-right:2px solid var(--line); }
 .tp-cell{ text-align:right; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
 .tp-empty{ color:#cbd5e1; text-align:center; }
-
-/* changed during the day: amber block, outlined */
 .tp-intraday{ background:#FEE9C8 !important; box-shadow:inset 0 0 0 1.5px #F59E0B; }
 table.tp tbody tr:hover td.tp-intraday{ background:#FDDCA8 !important; }
 .tp-arrow{ color:#B45309; margin:0 4px; font-weight:700; }
 .tp-old{ color:#A16207; text-decoration:line-through; opacity:.75; }
 .tp-new{ color:#C2410C; font-weight:800; }
-
-/* changed from the day before: blue block, outlined */
 .tp-dod{ background:#D7E9F8 !important; box-shadow:inset 0 0 0 1.5px var(--pri); color:var(--pri-dd); font-weight:800; }
 table.tp tbody tr:hover td.tp-dod{ background:#C4DFF4 !important; }
-
 .tp-sku{ font-weight:600; overflow:hidden; text-overflow:ellipsis; }
 .tp-meta{ color:var(--mute); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; }
-
-/* drag-to-resize handle */
 .rz{ position:absolute; top:0; right:0; width:7px; height:100%; cursor:col-resize; user-select:none; z-index:5; }
 .rz:hover{ background:var(--pri); opacity:.35; }
 .rz.dragging{ background:var(--pri); opacity:.6; }
@@ -183,8 +178,8 @@ body.resizing{ cursor:col-resize !important; user-select:none; }
       <div class="nav-item"    data-view="tradeplan" onclick="go(this)"><span class="ic">◈</span> Plan History</div>
     </nav>
     <div class="side-foot">
-      <div class="u" id="userName">Bazaar Ops</div>
-      <div class="r">Read only</div>
+      <div class="u" id="userName">—</div>
+      <div class="r"><span>Bazaar Ops</span><a href="/api/logout">Sign out</a></div>
     </div>
   </aside>
 
@@ -388,8 +383,10 @@ const VIEW_META = {
   expiry   : ['Expiry',             'Near-expiry inventory and discount linkage'],
   tradeplan: ['Trade Plan History', 'MOQ, rate and MIX changes over time'],
 };
+let curView = 'overview';
 function go(el){
   const v = el.dataset.view;
+  curView = v;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('on', n===el));
   document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='view-'+v));
   const meta = VIEW_META[v];
@@ -480,6 +477,7 @@ async function q(sql){
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({query:sql})
   });
+  if(res.status===401){ window.location.replace('/login.html'); return []; }
   if(!res.ok){ throw new Error(await res.text() || `HTTP ${res.status}`); }
   return await res.json();
 }
@@ -511,6 +509,7 @@ async function loadTrend(){
       ${stWhere('store_type_order')}
     GROUP BY 1 ORDER BY 1
   `);
+  if(!rows.length) return;
   const tBd=rows.reduce((s,r)=>s+(r.bd||0),0), tId=rows.reduce((s,r)=>s+(r.id||0),0);
   const tTd=rows.reduce((s,r)=>s+(r.td||0),0), tGmv=rows.reduce((s,r)=>s+(r.gmv||0),0);
   const tOrd=rows.reduce((s,r)=>s+(r.orders||0),0), tDO=rows.reduce((s,r)=>s+(r.disc_orders||0),0);
@@ -551,6 +550,7 @@ async function loadStore(){
     GROUP BY 1 HAVING SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0))>0
     ORDER BY SUM(COALESCE(basket_discount,0)+COALESCE(item_discount,0)) DESC LIMIT 10
   `);
+  if(!rows.length) return;
   const pal=['#1F5375','#4997D0','#f97316','#10b981','#a855f7','#ef4444','#f59e0b','#06b6d4','#64748b','#84cc16'];
   const ctx=document.getElementById('storeChart').getContext('2d');
   if(sCI) sCI.destroy();
@@ -644,6 +644,7 @@ async function loadExpiry(){
       ${stWhere('store_type_order')}
     GROUP BY item_name`)
   ]);
+  if(!invRows.length && !ordRows.length) return;
   const ordMap={}; ordRows.forEach(r=>{ ordMap[r.item_name]=r; });
   allExp = invRows.map(r=>{ const o=ordMap[r.item_name]||{}; return Object.assign({}, r, {dg:o.dg||0, qs:o.qs||0}); });
   const snapDt=allExp.length&&allExp[0].snap_dt?allExp[0].snap_dt.substring(0,10):'';
@@ -743,6 +744,7 @@ async function loadOrders(reset){
       WHERE rn > ${offset} AND rn <= ${offset + ORD_PAGE_SIZE + 1}
       ORDER BY rn
     `);
+    if(!rows) return;
     ordHasMore = rows.length > ORD_PAGE_SIZE;
     allOrderRows = allOrderRows.concat(ordHasMore ? rows.slice(0,ORD_PAGE_SIZE) : rows);
     ordPage++; renderOrders();
@@ -793,9 +795,9 @@ function exportOrderCSV(){
 }
 
 let tpRows=[], tpDates=[], tpMetric='moq';
-const TP_FIXED_W = [120, 320, 170, 160];   // City, SKU, Parent Brand, Core Category
-const TP_DATE_W  = 96;
-let tpColW = [];                            // widths the user has dragged, by column index
+const TP_FIXED_W=[120,320,170,160];
+const TP_DATE_W=96;
+let tpColW=[];
 const tpSd=()=>document.getElementById('tp_sd').value;
 const tpEd=()=>document.getElementById('tp_ed').value;
 
@@ -814,16 +816,15 @@ async function loadTradePlan(){
   if(days<0){ tpShowErr('Start must be on or before end.'); return; }
   if(days>90){ tpShowErr('Range cannot exceed 90 days.'); return; }
   tpHideErr();
-
   const btn=document.getElementById('tpBtn');
   btn.disabled=true;
   document.getElementById('tpWrap').innerHTML='<div class="spin-wrap"><span class="spin"></span>Loading plan history…</div>';
-
   try{
     const res=await fetch('/api/tradeplan',{
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({from:from,to:to})
     });
+    if(res.status===401){ window.location.replace('/login.html'); return; }
     if(!res.ok){
       let msg=null;
       try{ msg=(await res.json()).error; }catch(err){ msg=null; }
@@ -831,12 +832,10 @@ async function loadTradePlan(){
     }
     tpRows=await res.json();
     tpDates=Array.from(new Set(tpRows.map(r=>String(r.plan_date).substring(0,10)))).sort();
-
     const sel=document.getElementById('tp_city'), keep=sel.value;
     const cities=Array.from(new Set(tpRows.map(r=>r.city_raw).filter(Boolean))).sort();
     sel.innerHTML='<option value="">All cities</option>'+cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if(cities.indexOf(keep)>=0) sel.value=keep;
-
     renderTradePlan();
   }catch(e){
     document.getElementById('tpWrap').innerHTML=`<div class="empty" style="color:#b91c1c;">${esc(e.message)}</div>`;
@@ -869,14 +868,11 @@ function tpGroup(cityF){
 function renderTradePlan(){
   const wrap=document.getElementById('tpWrap');
   if(!tpRows.length){ wrap.innerHTML='<div class="empty">Pick a date range and click Load ↻</div>'; return; }
-
-  const cityF  = document.getElementById('tp_city').value;
-  const search = document.getElementById('tp_search').value.trim().toLowerCase();
-  const only   = document.getElementById('tp_changed').checked;
-  const m      = tpMetric;
-
+  const cityF=document.getElementById('tp_city').value;
+  const search=document.getElementById('tp_search').value.trim().toLowerCase();
+  const only=document.getElementById('tp_changed').checked;
+  const m=tpMetric;
   let rows=tpGroup(cityF);
-
   if(search){
     rows=rows.filter(r=>
       (r.sku||'').toLowerCase().indexOf(search)>=0 ||
@@ -884,8 +880,7 @@ function renderTradePlan(){
       (r.vendor||'').toLowerCase().indexOf(search)>=0 ||
       (r.cat||'').toLowerCase().indexOf(search)>=0);
   }
-
-  const changed = function(r){
+  const changed=function(r){
     let prev=null, moved=false;
     for(const d of tpDates){
       const rec=r.days[d]; if(!rec) continue;
@@ -896,41 +891,31 @@ function renderTradePlan(){
     }
     return moved;
   };
-
   if(only) rows=rows.filter(changed);
-
-  document.getElementById('tpBadge').textContent = rows.length+' SKUs · '+tpDates.length+' days';
-
+  document.getElementById('tpBadge').textContent=rows.length+' SKUs · '+tpDates.length+' days';
   if(!rows.length){ wrap.innerHTML='<div class="empty">Nothing matches those filters</div>'; return; }
-
-  const widths = [...TP_FIXED_W, ...tpDates.map(()=>TP_DATE_W)].map((w,i)=> tpColW[i] || w);
-  const cols = '<colgroup>'+widths.map(w=>`<col style="width:${w}px">`).join('')+'</colgroup>';
-
-  const head = '<thead><tr>'+
-      '<th class="f">City</th>'+
-      '<th class="f">SKU</th>'+
-      '<th class="f">Parent Brand</th>'+
-      '<th class="f f-last">Core Category</th>'+
-      tpDates.map(d=>`<th style="text-align:right;">${d.substring(8,10)}/${d.substring(5,7)}</th>`).join('')+
+  const widths=[...TP_FIXED_W,...tpDates.map(()=>TP_DATE_W)].map((w,i)=>tpColW[i]||w);
+  const cols='<colgroup>'+widths.map(w=>`<col style="width:${w}px">`).join('')+'</colgroup>';
+  const head='<thead><tr>'+
+    '<th class="f">City</th>'+'<th class="f">SKU</th>'+'<th class="f">Parent Brand</th>'+'<th class="f f-last">Core Category</th>'+
+    tpDates.map(d=>`<th style="text-align:right;">${d.substring(8,10)}/${d.substring(5,7)}</th>`).join('')+
     '</tr></thead>';
-
-  const body = rows.map(r=>{
+  const body=rows.map(r=>{
     let prev=null;
-    const cells = tpDates.map(d=>{
+    const cells=tpDates.map(d=>{
       const rec=r.days[d];
       if(!rec) return '<td class="tp-cell tp-empty">·</td>';
       const open=rec[m+'_open'], close=rec[m+'_close'], variants=rec[m+'_variants']||0;
       if(open==null && close==null) return '<td class="tp-cell tp-empty">·</td>';
-      const intraday = variants>1 && String(open)!==String(close);
-      const dod      = prev!=null && String(close)!==String(prev);
-      prev = close!=null ? close : prev;
-      const cls = 'tp-cell' + (intraday?' tp-intraday':'') + (dod&&!intraday?' tp-dod':'');
-      const inner = intraday
-        ? `<span class="tp-old">${tpFmt(open)}</span><span class="tp-arrow">→</span><span class="tp-new">${tpFmt(close)}</span>`
-        : tpFmt(close);
+      const intraday=variants>1 && String(open)!==String(close);
+      const dod=prev!=null && String(close)!==String(prev);
+      prev=close!=null?close:prev;
+      const cls='tp-cell'+(intraday?' tp-intraday':'')+(dod&&!intraday?' tp-dod':'');
+      const inner=intraday
+        ?`<span class="tp-old">${tpFmt(open)}</span><span class="tp-arrow">→</span><span class="tp-new">${tpFmt(close)}</span>`
+        :tpFmt(close);
       return `<td class="${cls}">${inner}</td>`;
     }).join('');
-
     return '<tr>'+
       `<td class="f">${esc(r.city)||'—'}</td>`+
       `<td class="f tp-sku" title="${esc(r.sku)}">${esc(r.sku)||'—'}</td>`+
@@ -938,63 +923,44 @@ function renderTradePlan(){
       `<td class="f f-last tp-meta" title="${esc(r.cat)}">${esc(r.cat)||'—'}</td>`+
       cells+'</tr>';
   }).join('');
-
   wrap.innerHTML='<table class="tp">'+cols+head+'<tbody>'+body+'</tbody></table>';
-  const table = wrap.querySelector('table.tp');
+  const table=wrap.querySelector('table.tp');
   attachResizers(table);
   layoutFrozen();
 }
 
-// Frozen columns can no longer use fixed CSS offsets once widths are draggable,
-// so their left positions are measured and applied after every render and resize.
 function layoutFrozen(){
-  const table = document.querySelector('#tpWrap table.tp');
+  const table=document.querySelector('#tpWrap table.tp');
   if(!table) return;
-  const headF = [...table.querySelectorAll('thead th.f')];
-  let acc = 0;
-  const lefts = headF.map(th=>{ const l = acc; acc += th.getBoundingClientRect().width; return l; });
-  headF.forEach((th,i)=>{ th.style.left = lefts[i]+'px'; });
+  const headF=[...table.querySelectorAll('thead th.f')];
+  let acc=0;
+  const lefts=headF.map(th=>{ const l=acc; acc+=th.getBoundingClientRect().width; return l; });
+  headF.forEach((th,i)=>{ th.style.left=lefts[i]+'px'; });
   table.querySelectorAll('tbody tr').forEach(tr=>{
-    [...tr.querySelectorAll('td.f')].forEach((td,i)=>{ td.style.left = lefts[i]+'px'; });
+    [...tr.querySelectorAll('td.f')].forEach((td,i)=>{ td.style.left=lefts[i]+'px'; });
   });
 }
 
 function attachResizers(table){
-  const cols = [...table.querySelectorAll('colgroup col')];
+  const cols=[...table.querySelectorAll('colgroup col')];
   [...table.querySelectorAll('thead th')].forEach((th,i)=>{
-    const rz = document.createElement('div');
-    rz.className = 'rz';
+    const rz=document.createElement('div');
+    rz.className='rz';
     th.appendChild(rz);
-
-    rz.addEventListener('mousedown', e=>{
+    rz.addEventListener('mousedown',e=>{
       e.preventDefault(); e.stopPropagation();
-      const startX = e.pageX;
-      const startW = th.getBoundingClientRect().width;
-      rz.classList.add('dragging');
-      document.body.classList.add('resizing');
-      const move = ev=>{
-        const w = Math.max(56, Math.round(startW + (ev.pageX - startX)));
-        if(cols[i]) cols[i].style.width = w+'px';
-        tpColW[i] = w;
-        layoutFrozen();
-      };
-      const up = ()=>{
-        rz.classList.remove('dragging');
-        document.body.classList.remove('resizing');
-        document.removeEventListener('mousemove', move);
-        document.removeEventListener('mouseup', up);
-      };
-      document.addEventListener('mousemove', move);
-      document.addEventListener('mouseup', up);
+      const startX=e.pageX, startW=th.getBoundingClientRect().width;
+      rz.classList.add('dragging'); document.body.classList.add('resizing');
+      const move=ev=>{ const w=Math.max(56,Math.round(startW+(ev.pageX-startX))); if(cols[i]) cols[i].style.width=w+'px'; tpColW[i]=w; layoutFrozen(); };
+      const up=()=>{ rz.classList.remove('dragging'); document.body.classList.remove('resizing'); document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+      document.addEventListener('mousemove',move);
+      document.addEventListener('mouseup',up);
     });
-
-    // double click the handle to reset that column
-    rz.addEventListener('dblclick', e=>{
+    rz.addEventListener('dblclick',e=>{
       e.preventDefault(); e.stopPropagation();
-      const def = i < TP_FIXED_W.length ? TP_FIXED_W[i] : TP_DATE_W;
-      if(cols[i]) cols[i].style.width = def+'px';
-      tpColW[i] = def;
-      layoutFrozen();
+      const def=i<TP_FIXED_W.length?TP_FIXED_W[i]:TP_DATE_W;
+      if(cols[i]) cols[i].style.width=def+'px';
+      tpColW[i]=def; layoutFrozen();
     });
   });
 }
@@ -1010,15 +976,26 @@ function exportTradePlanCSV(){
       const rec=r.days[d]; if(!rec) return '';
       const open=rec[m+'_open'], close=rec[m+'_close'];
       const intraday=(rec[m+'_variants']||0)>1 && String(open)!==String(close);
-      return intraday ? (open+' -> '+close) : (close==null?'':close);
+      return intraday?(open+' -> '+close):(close==null?'':close);
     })));
   }
-  downloadCSV(out, `tradeplan_${m}_${tpSd()}_to_${tpEd()}.csv`);
+  downloadCSV(out,`tradeplan_${m}_${tpSd()}_to_${tpEd()}.csv`);
 }
 
-window.addEventListener('resize', ()=>{ if(curView==='tradeplan') layoutFrozen(); });
+window.addEventListener('resize',()=>{ if(curView==='tradeplan') layoutFrozen(); });
 
-window.addEventListener('load',()=>{
+window.addEventListener('load', async ()=>{
+  // ── Auth check: redirect to login if no valid session ──
+  try {
+    const meRes = await fetch('/api/me');
+    if (!meRes.ok) { window.location.replace('/login.html'); return; }
+    const { email } = await meRes.json();
+    document.getElementById('userName').textContent = email;
+  } catch(e) {
+    window.location.replace('/login.html');
+    return;
+  }
+
   const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
   const start=new Date(today); start.setDate(today.getDate()-29);
   document.getElementById('ed').value=fmt(today);
