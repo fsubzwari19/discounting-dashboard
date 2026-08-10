@@ -9,11 +9,13 @@ no npm dependencies.
 ## Stack
 
 - `index.html` — the whole UI. Inline `<style>` and `<script>`, no framework.
-  Chart.js is loaded from CDN.
-- `api/query.js` — proxies arbitrary SQL to Trino.
-- `api/tradeplan.js` — reads trade plan history from Supabase Postgres.
+  Chart.js is loaded from CDN. On load it calls `/api/me` and redirects to
+  `login.html` when there is no valid session.
+- `api/query.js` — proxies arbitrary SQL to Trino. **Auth-gated.**
+- `api/tradeplan.js` — reads trade plan history from Supabase Postgres. **Auth-gated.**
 - `login.html`, `api/_auth.js`, `api/login.js`, `api/auth.js`, `api/me.js`,
-  `api/logout.js` — Google OAuth scaffolding, currently **dormant** (see below).
+  `api/logout.js` — Google OAuth, **active** and protecting the API routes
+  (see [Auth](#auth) below).
 - `sql/` — SQL definitions that must be run manually in Supabase.
 - `package.json` — deliberately has no dependencies. `"type": "module"` is
   required so Vercel does not transpile the ESM routes to CJS.
@@ -78,6 +80,50 @@ range and optional city, both validated server side. Keep it that way.
 
 ---
 
+## Auth
+
+Google OAuth is **live** and gates every data route. This section replaces the
+old "`/api/query` is unauthenticated" open issue, which was resolved by wiring
+the gate in after the first draft of this doc.
+
+**Flow**
+
+1. `index.html` calls `GET /api/me` on load. No valid session → redirect to
+   `login.html`.
+2. `login.html` links to `GET /api/login`, which redirects to Google's consent
+   screen (`hd` hint set to `ALLOWED_DOMAIN`).
+3. `GET /api/auth` is the OAuth callback: exchanges the code, fetches the user's
+   email, enforces `ALLOWED_DOMAIN` via an `@domain` suffix check, then sets a
+   signed session cookie and redirects to `/`.
+4. `GET /api/logout` clears the cookie.
+
+**Session cookie** — issued and verified in `api/_auth.js`:
+
+- `auth=<base64url(payload)>.<hmac-sha256>` signed with `SESSION_SECRET`.
+- Payload is `{ email, exp }`, 8-hour TTL. Signature checked with a constant-time
+  compare; expiry checked on every request.
+- Cookie flags: `HttpOnly; Secure; Path=/; Max-Age=28800; SameSite=Lax`
+  (`Secure` is dropped on localhost).
+
+**Enforcement** — `api/query.js`, `api/tradeplan.js` and `api/me.js` all call
+`getUser(req)` and return `401` when there is no valid cookie. The frontend
+turns a `401` into a redirect to `login.html`. `getUser` returns null when
+`SESSION_SECRET` is unset, so the routes **fail closed**: if the OAuth env vars
+are missing in Vercel, every data call `401`s rather than running open. `/api/login`
+and `/api/auth` are intentionally public (they are the login flow itself).
+
+**Residual risks worth knowing**
+
+- `api/query.js` still runs **arbitrary SQL** — it is now gated, but any signed-in
+  `@bazaartechnologies.com` user can run any statement Trino's credentials can
+  reach. There is no read-only / `SELECT`-only enforcement. If you want to reduce
+  that blast radius, the stronger fix is still to replace the SQL proxy with named
+  parameterised queries the way `api/tradeplan.js` works.
+- `api/auth.js` accepts Google's `email` without checking `verified_email`. Fine
+  for a domain-restricted org, but worth tightening if the audience widens.
+
+---
+
 ## Environment variables
 
 Set in Vercel. None are committed.
@@ -87,36 +133,14 @@ Set in Vercel. None are committed.
 | `SUPABASE_URL` | `api/tradeplan.js` | active |
 | `SUPABASE_SERVICE_KEY` | `api/tradeplan.js` | active, server side only |
 | Trino connection vars | `api/query.js` | active |
-| `GOOGLE_CLIENT_ID` | `api/auth.js` | dormant |
-| `GOOGLE_CLIENT_SECRET` | `api/auth.js` | dormant |
-| `SESSION_SECRET` | `api/_auth.js` | dormant, needs 32+ chars |
-| `ALLOWED_DOMAIN` | `api/auth.js` | dormant |
+| `GOOGLE_CLIENT_ID` | `api/login.js`, `api/auth.js` | active |
+| `GOOGLE_CLIENT_SECRET` | `api/auth.js` | active |
+| `SESSION_SECRET` | `api/_auth.js` (all gated routes) | active, needs 32+ chars |
+| `ALLOWED_DOMAIN` | `api/login.js`, `api/auth.js` | active, `bazaartechnologies.com` |
 
----
-
-## Open issue: `/api/query` is unauthenticated
-
-**This is the most important thing to know about this repo.**
-
-`api/query.js` accepts arbitrary SQL from any caller, with no auth, and runs it
-against Trino production using server-side credentials. Anyone who has the URL
-can query anything Trino can reach.
-
-Google OAuth was built in commit `00ab530` and reverted 45 minutes later in
-`66cf773`. The scaffolding is still in the repo but the gate is commented out.
-The revert note says credentials are secured via env vars, which is true but
-beside the point: the risk is unrestricted query access, not credential leakage.
-
-Before this dashboard is shared beyond its current audience, either:
-
-1. Re-enable the OAuth gate and verify the session cookie inside `api/query.js`, or
-2. Replace the SQL proxy with named parameterised queries, the way
-   `api/tradeplan.js` works.
-
-Option 2 is the stronger fix. Option 1 is faster and the code already exists.
-
-Also worth doing either way: `vercel.json` sets
-`Access-Control-Allow-Origin: *` on `/api/*`. Narrow that to the deployment domain.
+All seven are required for the gate to work. Because the routes fail closed, a
+missing `SESSION_SECRET` (or any OAuth var) breaks the whole dashboard rather
+than leaving it open.
 
 ---
 
