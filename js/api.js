@@ -1,11 +1,12 @@
-// Trino query proxy client. POSTs SQL to /api/query, redirects to login on 401.
+// Trino query client. Invokes the Supabase `query` edge function with the
+// caller's session; redirects to login on 401.
+import { invokeFn } from './supabase.js';
 
 export async function q(sql){
-  const res=await fetch('/api/query',{
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({query:sql})
-  });
-  if(res.status===401){ window.location.replace('/login.html'); return []; }
-  if(!res.ok){ throw new Error(await res.text() || `HTTP ${res.status}`); }
-  return await res.json();
+  try {
+    return await invokeFn('query', { query: sql });
+  } catch(e){
+    if(e.status === 401){ window.location.replace('/login.html'); return []; }
+    throw e;
+  }
 }

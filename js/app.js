@@ -1,5 +1,6 @@
 // Entry module: hash-routed view shell, orchestration, and bridge that exposes
 // the handlers referenced by inline on* attributes onto window.
+import { supabase, signOut, ALLOWED_DOMAIN } from './supabase.js';
 import { validateRange, setStatus, showErr,
          toggleMsDropdown, msSelectAll, msClearAll, updateMsLabel } from './filters.js';
 import { loadTrend, loadStore } from './views/overview.js';
@@ -79,23 +80,23 @@ window.addEventListener('resize',()=>{ if(curView==='tradeplan') layoutFrozen();
 
 // Expose handlers used by inline on* attributes in index.html.
 Object.assign(window, {
-  go, loadAll,
+  go, loadAll, signOut,
   toggleMsDropdown, msSelectAll, msClearAll, updateMsLabel,
   loadOrders, exportOrderCSV, switchTab,
   loadTradePlan, renderTradePlan, setMetric, exportTradePlanCSV,
 });
 
 window.addEventListener('load', async ()=>{
-  // ── Auth check: redirect to login if no valid session ──
-  try {
-    const meRes = await fetch('/api/me');
-    if (!meRes.ok) { window.location.replace('/login.html'); return; }
-    const { email } = await meRes.json();
-    document.getElementById('userName').textContent = email;
-  } catch(e) {
-    window.location.replace('/login.html');
+  // ── Auth: require a Supabase session on the org email domain ──
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){ window.location.replace('/login.html'); return; }
+  const email = (session.user && session.user.email) ? session.user.email : '';
+  if(!email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN)){
+    await supabase.auth.signOut();
+    window.location.replace('/login.html?error=domain');
     return;
   }
+  document.getElementById('userName').textContent = email;
 
   const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
   const start=new Date(today); start.setDate(today.getDate()-29);

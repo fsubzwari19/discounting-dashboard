@@ -1,4 +1,5 @@
 import { esc, downloadCSV } from '../util.js';
+import { invokeFn } from '../supabase.js';
 
 let tpRows=[], tpDates=[], tpMetric='moq';
 const TP_FIXED_W=[120,320,170,160];
@@ -28,17 +29,14 @@ export async function loadTradePlan(){
   btn.disabled=true;
   document.getElementById('tpWrap').innerHTML='<div class="spin-wrap"><span class="spin"></span>Loading plan history…</div>';
   try{
-    const res=await fetch('/api/tradeplan',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({from:from,to:to})
-    });
-    if(res.status===401){ window.location.replace('/login.html'); return; }
-    if(!res.ok){
-      let msg=null;
-      try{ msg=(await res.json()).error; }catch(err){ msg=null; }
-      throw new Error(msg||('HTTP '+res.status));
+    let data;
+    try{
+      data = await invokeFn('tradeplan', { from: from, to: to });
+    }catch(err){
+      if(err.status===401){ window.location.replace('/login.html'); return; }
+      throw err;
     }
-    tpRows=await res.json();
+    tpRows=data;
     tpDates=Array.from(new Set(tpRows.map(r=>String(r.plan_date).substring(0,10)))).sort();
     const sel=document.getElementById('tp_city'), keep=sel.value;
     const cities=Array.from(new Set(tpRows.map(r=>r.city_raw).filter(Boolean))).sort();
