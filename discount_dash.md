@@ -1,51 +1,79 @@
 # Discounting Dashboard
 
-Internal dashboard for Bazaar's discount review and trade plan history.
-Static single-page app on Vercel with serverless API routes. No build step,
-no npm dependencies.
+Internal dashboard for Bazaar's discount review and trade-plan history.
+A static single-page app (no build step, no npm dependencies) with all
+server-side work on **Supabase**. **Migrated off Vercel** (Aug 2026) — there are
+no serverless functions or `vercel.json` in this repo anymore.
 
 ---
 
-## Stack
+## Architecture
 
-- `index.html` — the whole UI. Inline `<style>` and `<script>`, no framework.
-  Chart.js is loaded from CDN. On load it calls `/api/me` and redirects to
-  `login.html` when there is no valid session.
-- `api/query.js` — proxies arbitrary SQL to Trino. **Auth-gated.**
-- `api/tradeplan.js` — reads trade plan history from Supabase Postgres. **Auth-gated.**
-- `login.html`, `api/_auth.js`, `api/login.js`, `api/auth.js`, `api/me.js`,
-  `api/logout.js` — Google OAuth, **active** and protecting the API routes
-  (see [Auth](#auth) below).
-- `sql/` — SQL definitions that must be run manually in Supabase.
-- `package.json` — deliberately has no dependencies. `"type": "module"` is
-  required so Vercel does not transpile the ESM routes to CJS.
+- **Frontend** — the static files in this repo (`index.html`, `login.html`,
+  `styles.css`, `js/*`). Served as a plain static site. Repo is moving to the
+  `bazaartechnologies` GitHub org; production host/domain is **TBD** (see below).
+- **Backend** — Supabase project **BZ Keenu Project** (`bxlydelarjrpqhkpjazd`,
+  region ap-southeast-2):
+  - Edge function **`query`** — Trino SQL proxy.
+  - Edge function **`tradeplan`** — reads `bz_discount.tradeplan_daily`.
+  - **Supabase Auth** (Google provider) — sign-in and session.
+  - **Postgres** — the `bz_discount` schema (trade-plan snapshots).
+- **Auth** — Supabase Auth Google sign-in. The browser holds a session JWT; the
+  edge functions verify it and enforce the `@bazaartech.com` email domain on
+  every call. There is no custom cookie/OAuth server anymore.
 
-Deploys automatically from `main`.
+The frontend embeds only the **public** Supabase project URL and publishable key
+(safe in the browser). All secrets live in Supabase.
 
 ---
 
-## UI structure
+## Frontend structure
 
-Sidebar nav, five sections, all in `index.html` as `.view` divs toggled by `go()`:
+Native ES modules under `js/` (loaded via `<script type="module">`, no bundler):
 
-| Section | id | Source |
-|---|---|---|
-| Overview | `view-overview` | Trino: KPIs, daily trend, store-type donut |
-| Breakdown | `view-breakdown` | Trino: warehouse table, top discounted SKUs |
-| Orders | `view-orders` | Trino: order-level detail, paginated, CSV export |
-| Expiry | `view-expiry` | Trino: near-expiry inventory joined to discounts |
-| Plan History | `view-tradeplan` | Supabase: trade plan MOQ / rate / MIX over time |
+| Module | Responsibility |
+|---|---|
+| `app.js` | Entry: hash routing, view shell, auth check on load, exposes inline `on*` handlers on `window` |
+| `supabase.js` | supabase-js client (from `esm.sh`) + `invokeFn()` and auth helpers |
+| `api.js` | `q(sql)` → invokes the `query` edge function |
+| `filters.js` | Global date range, store-type multiselect, error/status banners |
+| `util.js` | `N`, `P`, `esc`, `downloadCSV` |
+| `views/overview.js` · `breakdown.js` · `orders.js` · `expiry.js` · `tradeplan.js` | One module per section |
 
-Theme is celestial blue, `--pri: #4997D0`. Do not use the previous navy.
+Five sections, **hash-routed** (`#/overview`, `#/breakdown`, `#/orders`,
+`#/expiry`, `#/tradeplan`) — deep-linkable, with working back/forward and
+refresh. Theme is celestial blue, `--pri: #4997D0`. Chart.js is loaded from CDN
+(pinned + SRI).
 
-Global date-range and store-type controls apply to the four Trino views. Plan
-History has its own controls and hides the global ones.
+---
+
+## Backend — Supabase edge functions
+
+Both are at `https://bxlydelarjrpqhkpjazd.supabase.co/functions/v1/<name>` and
+deployed with `verify_jwt = false` **on purpose**: they run their own auth so the
+CORS preflight (which carries no `Authorization` header) can be answered. Each
+function: handles `OPTIONS`/CORS → verifies the caller's Supabase session via
+`auth.getUser()` → enforces `@bazaartech.com` (env `ALLOWED_EMAIL_DOMAIN`,
+default `bazaartech.com`) → does its work.
+
+### `query`
+
+Proxies arbitrary SQL to Trino using server-side credentials (Trino secrets).
+Returns an array of row objects. **Still an arbitrary-SQL proxy** — the
+`SELECT`-only hardening is a parked item, carried over from the Vercel version.
+
+### `tradeplan`
+
+Reads `bz_discount.tradeplan_daily` with the service role (never exposed to the
+browser). Accepts `{ from, to, city }`, validated server side (ISO dates, span
+≤ 90 days, city letters/spaces only). Deliberately **not** a SQL proxy — keep it
+that way.
 
 ---
 
 ## Data sources
 
-### Trino (`api/query.js`)
+### Trino (`query` edge function)
 
 Silver-layer schemas, always prefixed `hive.`:
 
@@ -57,115 +85,82 @@ Silver-layer schemas, always prefixed `hive.`:
 
 Gotchas learned the hard way:
 
-- `partition_key` is a **monthly** partition, always the first of the month.
-  It is not the order date. Filter on both: `partition_key >= date_trunc('month', current_date)`
-  **and** `order_date = current_date`.
+- `partition_key` is a **monthly** partition (first of the month), not the order
+  date. Filter on both `partition_key >= date_trunc('month', current_date)` and
+  the real `order_date`.
 - Trino has no `LIMIT n OFFSET m`. Page with a `ROW_NUMBER()` subquery.
-- `item_mapping` has duplicate `item_name` values. Join on `item_id`, which is unique.
+- `item_mapping` has duplicate `item_name` values. Join on `item_id` (unique).
 - Real category names are `Milk & Dairy` and `Snacks & Confectionary`, not
-  `Dairy` and `Snacks`. The short forms match nothing and fail silently.
+  `Dairy` / `Snacks` — the short forms match nothing and fail silently.
 
-### Supabase (`api/tradeplan.js`)
-
-Schema `bz_discount`, which must be listed under Settings > API > Exposed schemas.
+### Supabase Postgres — schema `bz_discount`
 
 - `tradeplan_snapshot` — written six times a day by the n8n workflow
-  "Bazaar - Trade Plan Snapshot". One row per trade plan sheet row per capture.
-- `tradeplan_daily` — view in `sql/`, collapses each day's snapshots into one row
-  per SKU, city and day with opening/closing values and a variant count so
-  intraday edits are detectable.
+  "Bazaar - Trade Plan Snapshot". One row per trade-plan sheet row per capture.
+- `tradeplan_daily` — the view the `tradeplan` function reads. Collapses each
+  day's snapshots into one row per SKU / city / day with opening & closing values
+  and a variant count so intraday edits are detectable.
 
-`api/tradeplan.js` is deliberately **not** a SQL proxy. It accepts only a date
-range and optional city, both validated server side. Keep it that way.
-
----
-
-## Auth
-
-Google OAuth is **live** and gates every data route. This section replaces the
-old "`/api/query` is unauthenticated" open issue, which was resolved by wiring
-the gate in after the first draft of this doc.
-
-**Flow**
-
-1. `index.html` calls `GET /api/me` on load. No valid session → redirect to
-   `login.html`.
-2. `login.html` links to `GET /api/login`, which redirects to Google's consent
-   screen (`hd` hint set to `ALLOWED_DOMAIN`).
-3. `GET /api/auth` is the OAuth callback: exchanges the code, fetches the user's
-   email, enforces `ALLOWED_DOMAIN` via an `@domain` suffix check, then sets a
-   signed session cookie and redirects to `/`.
-4. `GET /api/logout` clears the cookie.
-
-**Session cookie** — issued and verified in `api/_auth.js`:
-
-- `auth=<base64url(payload)>.<hmac-sha256>` signed with `SESSION_SECRET`.
-- Payload is `{ email, exp }`, 8-hour TTL. Signature checked with a constant-time
-  compare; expiry checked on every request.
-- Cookie flags: `HttpOnly; Secure; Path=/; Max-Age=28800; SameSite=Lax`
-  (`Secure` is dropped on localhost).
-
-**Enforcement** — `api/query.js`, `api/tradeplan.js` and `api/me.js` all call
-`getUser(req)` and return `401` when there is no valid cookie. The frontend
-turns a `401` into a redirect to `login.html`. `getUser` returns null when
-`SESSION_SECRET` is unset, so the routes **fail closed**: if the OAuth env vars
-are missing in Vercel, every data call `401`s rather than running open. `/api/login`
-and `/api/auth` are intentionally public (they are the login flow itself).
-
-**Residual risks worth knowing**
-
-- `api/query.js` still runs **arbitrary SQL** — it is now gated, but any signed-in
-  `@bazaartechnologies.com` user can run any statement Trino's credentials can
-  reach. There is no read-only / `SELECT`-only enforcement. If you want to reduce
-  that blast radius, the stronger fix is still to replace the SQL proxy with named
-  parameterised queries the way `api/tradeplan.js` works.
-- `api/auth.js` accepts Google's `email` without checking `verified_email`. Fine
-  for a domain-restricted org, but worth tightening if the audience widens.
+The schema must stay listed under Settings → API → Exposed schemas.
 
 ---
 
-## Environment variables
+## Secrets & configuration (Supabase)
 
-Set in Vercel. None are committed.
+Edge-function secrets (`supabase secrets set --project-ref bxlydelarjrpqhkpjazd …`
+or Dashboard → Edge Functions → Secrets):
 
-| Var | Used by | Status |
+| Secret | Used by | Notes |
 |---|---|---|
-| `SUPABASE_URL` | `api/tradeplan.js` | active |
-| `SUPABASE_SERVICE_KEY` | `api/tradeplan.js` | active, server side only |
-| Trino connection vars | `api/query.js` | active |
-| `GOOGLE_CLIENT_ID` | `api/login.js`, `api/auth.js` | active |
-| `GOOGLE_CLIENT_SECRET` | `api/auth.js` | active |
-| `SESSION_SECRET` | `api/_auth.js` (all gated routes) | active, needs 32+ chars |
-| `ALLOWED_DOMAIN` | `api/login.js`, `api/auth.js` | active, `bazaartechnologies.com` |
+| `TRINO_HOST` / `TRINO_PORT` / `TRINO_USER` / `TRINO_PASSWORD` / `TRINO_HEADERS` / `TRINO_SCHEME` | `query` | Trino connection; `query` returns 500 until these are set |
+| `ALLOWED_EMAIL_DOMAIN` | both | Defaults to `bazaartech.com`; only set to override |
+| `ALLOWED_ORIGINS` | both | CSV of allowed site origins for CORS; `*` until the domain is set |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | both | **Auto-injected** by Supabase — do not set |
 
-All seven are required for the gate to work. Because the routes fail closed, a
-missing `SESSION_SECRET` (or any OAuth var) breaks the whole dashboard rather
-than leaving it open.
+**Supabase Auth** — Google provider enabled with the org's Google OAuth client.
+The Google client's authorized redirect URI must include
+`https://bxlydelarjrpqhkpjazd.supabase.co/auth/v1/callback`. The Site URL and
+redirect allowlist (Auth → URL Configuration) must include the production domain.
 
 ---
 
 ## Related n8n workflows
 
-Not in this repo, but they produce the data Plan History reads.
+Not in this repo, but they produce the data the Trade Plan section reads.
 
 - **Bazaar - Discount Approval Processing** — auto-approves discount orders
-  against the trade plan sheet. Runs every 2 hours, 10:30 to 20:30 PKT.
-- **Bazaar - Trade Plan Snapshot** — captures the trade plan sheet six times a
+  against the trade plan. Runs every 2 hours, 10:30–20:30 PKT. Its queue query is
+  **Metabase card 447** (not in the n8n flow itself).
+- **Bazaar - Trade Plan Snapshot** — captures the trade-plan sheet six times a
   day into `bz_discount.tradeplan_snapshot`. Same schedule.
-- **Bazaar - n8n Error Alerts** — error workflow, posts failures to Slack.
+- **Bazaar - n8n Error Alerts** — posts failures to Slack.
 
-Retention on the snapshot table: everything for 60 days, then thinned to one
-snapshot per day, deleted entirely past 90 days.
+Snapshot retention: everything for 60 days, then thinned to one snapshot per day,
+deleted entirely past 90 days.
+
+---
+
+## Production domain — TBD
+
+The static site will be deployed by the onboarding/deploy skill, which assigns a
+URL. Once that URL exists, three things must be set (this doc will be updated with
+the final value):
+
+1. `ALLOWED_ORIGINS` secret on both edge functions → the site origin (tightens
+   CORS from `*`).
+2. Supabase Auth → URL Configuration → Site URL + redirect allowlist → include
+   the domain, or Google sign-in's `redirectTo` is rejected.
+3. Google OAuth authorized redirect URI stays the Supabase callback (unchanged by
+   the site domain).
 
 ---
 
 ## Working on this repo
 
-- `index.html` is one large file. The inline `<style>` and `<script>` are prime
-  candidates for extraction into `styles.css` and `app.js`, which would make the
-  file editable in smaller pieces.
-- There is no test suite. Verify changes by checking the inline JS parses and
-  every `getElementById` target exists in the markup, then load the page.
-- The trade plan grid uses `table-layout: fixed` with a `<colgroup>` so columns
-  can be dragged. Frozen columns are positioned by measuring in `layoutFrozen()`,
-  not by fixed CSS offsets, so any change to the column set must keep that in sync.
+- Pure static, no build step. Verify changes by confirming the JS parses, every
+  `getElementById` target exists in the markup, the module graph resolves, and the
+  page loads. (`package.json` is a harmless Vercel-era leftover; static hosts
+  ignore it.)
+- The trade-plan grid uses `table-layout: fixed` with a `<colgroup>` so columns
+  can be dragged; frozen columns are positioned by measuring in `layoutFrozen()`,
+  so any change to the column set must keep that in sync.
