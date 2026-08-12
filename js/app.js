@@ -1,4 +1,4 @@
-// Entry module: view routing shell, orchestration, and bridge that exposes
+// Entry module: hash-routed view shell, orchestration, and bridge that exposes
 // the handlers referenced by inline on* attributes onto window.
 import { validateRange, setStatus, showErr,
          toggleMsDropdown, msSelectAll, msClearAll, updateMsLabel } from './filters.js';
@@ -18,10 +18,12 @@ const VIEW_META = {
 };
 
 let curView = 'overview';
-function go(el){
-  const v = el.dataset.view;
+
+// Switch the visible section. Pure DOM work — routing decides when to call it.
+function activate(v){
+  if(!VIEW_META[v]) v = 'overview';
   curView = v;
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('on', n===el));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('on', n.dataset.view===v));
   document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='view-'+v));
   const meta = VIEW_META[v];
   document.getElementById('viewTitle').textContent = meta[0];
@@ -31,6 +33,18 @@ function go(el){
   document.getElementById('tpControls').style.display     = isTP ? 'flex' : 'none';
   if(isTP && !tpLoaded()) loadTradePlan();
 }
+
+const hashView = () => location.hash.replace(/^#\/?/, '') || 'overview';
+function route(){ activate(hashView()); }
+
+// Nav click: drive the URL so back/forward and deep-links work. When the hash
+// already matches (re-click), activate directly since hashchange won't fire.
+function go(el){
+  const v = el.dataset.view;
+  if(hashView() === v) activate(v);
+  else location.hash = '/' + v;
+}
+window.addEventListener('hashchange', route);
 
 const REFRESH_SECS=30*60; let secsLeft=REFRESH_SECS, autoTimer=null;
 function startCountdown(){
@@ -96,5 +110,6 @@ window.addEventListener('load', async ()=>{
   document.getElementById('tp_ed').value=fmt(today);
   document.getElementById('tp_sd').value=fmt(tpStart);
 
+  route();      // honor the initial URL hash (deep-link / refresh)
   loadAll();
 });
