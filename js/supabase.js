@@ -1,7 +1,7 @@
 // Supabase client + shared helpers. The URL and publishable key are public by
 // design (safe in the browser); all privileged work happens inside the edge
 // functions, which verify the caller's session and the @bazaartech.com domain.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.112.3';
 
 export const SUPABASE_URL = 'https://bxlydelarjrpqhkpjazd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_8ugOzhSopmZpxQtmyEtsbw_0OSxV5un';
